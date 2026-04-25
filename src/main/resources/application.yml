@@ -1,0 +1,50 @@
+spring:
+  datasource:
+    url: ${AILEARN_DATASOURCE_URL:jdbc:postgresql://localhost:5432/ailearn}
+    username: ${AILEARN_DATASOURCE_USERNAME:ailearn}
+    password: ${AILEARN_DATASOURCE_PASSWORD:ailearn}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+
+langchain4j:
+  open-ai:
+    chat-model:
+      api-key: ${OPENAI_API_KEY:test-key}
+      model-name: ${OPENAI_CHAT_MODEL:gpt-4o-mini}
+      temperature: 0.2
+
+ailearn:
+  candidate:
+    cron: ${AILEARN_CANDIDATE_CRON:0 0 8 * * *}
+    lookback-hours: ${AILEARN_CANDIDATE_LOOKBACK_HOURS:36}
+    max-candidates: ${AILEARN_CANDIDATE_MAX:5}
+    min-score: ${AILEARN_CANDIDATE_MIN_SCORE:6.5}
+  rss:
+    feeds:
+      - name: Hacker News AI
+        url: https://hnrss.org/newest?q=%22artificial+intelligence%22+OR+llm+OR+agent
+      - name: TechCrunch AI
+        url: https://techcrunch.com/category/artificial-intelligence/feed/
+      - name: OpenAI Blog
+        url: https://openai.com/news/rss.xml
+  filters:
+    keywords:
+      - ai
+      - llm
+      - agent
+      - model
+      - inference
+      - rag
+      - vector
+      - multimodal
+      - reasoning
+      - openai
+
+server:
+  port: ${PORT:8080}
