@@ -38,8 +38,9 @@ class CandidateSelectionServiceTest {
 
         CandidateArticleRepository candidateRepository = candidateRepository(candidate, savedCandidate, clearedBatchId);
         LearningArticleRepository learningRepository = learningRepository(Optional.empty(), savedLearningArticle, learningIdSequence);
+        LearningWorkflowService workflowService = workflowService();
 
-        CandidateSelectionService service = new CandidateSelectionService(candidateRepository, learningRepository, clock);
+        CandidateSelectionService service = new CandidateSelectionService(candidateRepository, learningRepository, workflowService, clock);
         SelectCandidateResponse response = service.selectCandidate(7L);
 
         assertThat(clearedBatchId.get()).isEqualTo(22L);
@@ -54,10 +55,12 @@ class CandidateSelectionServiceTest {
     void selectCandidate_shouldFailWhenCandidateDoesNotExist() {
         CandidateArticleRepository candidateRepository = candidateRepository(null, new AtomicReference<>(), new AtomicReference<>());
         LearningArticleRepository learningRepository = learningRepository(Optional.empty(), new AtomicReference<>(), new AtomicLong(1L));
+        LearningWorkflowService workflowService = workflowService();
 
         CandidateSelectionService service = new CandidateSelectionService(
                 candidateRepository,
                 learningRepository,
+                workflowService,
                 Clock.fixed(Instant.parse("2026-04-26T00:00:00Z"), ZoneOffset.UTC)
         );
 
@@ -129,5 +132,14 @@ class CandidateSelectionServiceTest {
         candidate.setPublishedAt(LocalDateTime.of(2026, 4, 26, 8, 30));
         candidate.setSummary("A useful AI article");
         return candidate;
+    }
+
+    private LearningWorkflowService workflowService() {
+        return new LearningWorkflowService(null, null, null, null, null, null, null, null, Clock.systemUTC()) {
+            @Override
+            public LearningArticleEntity processLearningArticle(Long learningArticleId) {
+                return null;
+            }
+        };
     }
 }

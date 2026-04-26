@@ -8,4 +8,6 @@ import java.util.List;
 public interface ArticleParagraphRepository extends JpaRepository<ArticleParagraphEntity, Long> {
 
     List<ArticleParagraphEntity> findByLearningArticleIdOrderByParagraphIndexAsc(Long learningArticleId);
+
+    void deleteByLearningArticleId(Long learningArticleId);
 }

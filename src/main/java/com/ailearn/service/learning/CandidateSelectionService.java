@@ -20,15 +20,18 @@ public class CandidateSelectionService {
 
     private final CandidateArticleRepository candidateArticleRepository;
     private final LearningArticleRepository learningArticleRepository;
+    private final LearningWorkflowService learningWorkflowService;
     private final Clock clock;
 
     public CandidateSelectionService(
             CandidateArticleRepository candidateArticleRepository,
             LearningArticleRepository learningArticleRepository,
+            LearningWorkflowService learningWorkflowService,
             Clock clock
     ) {
         this.candidateArticleRepository = candidateArticleRepository;
         this.learningArticleRepository = learningArticleRepository;
+        this.learningWorkflowService = learningWorkflowService;
         this.clock = clock;
     }
 
@@ -47,6 +50,8 @@ public class CandidateSelectionService {
         if (learningArticle.getId() == null) {
             learningArticle = learningArticleRepository.save(learningArticle);
         }
+
+        learningWorkflowService.processLearningArticle(learningArticle.getId());
 
         return new SelectCandidateResponse(
                 learningArticle.getId(),

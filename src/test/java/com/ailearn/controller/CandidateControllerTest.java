@@ -4,6 +4,7 @@ import com.ailearn.entity.CandidateArticleEntity;
 import com.ailearn.entity.CandidateBatchEntity;
 import com.ailearn.repository.CandidateArticleRepository;
 import com.ailearn.service.learning.CandidateSelectionService;
+import com.ailearn.service.learning.LearningWorkflowService;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -34,7 +35,7 @@ class CandidateControllerTest {
 
         CandidateArticleRepository repository = repository(List.of(first, second));
         Clock clock = Clock.fixed(Instant.parse("2026-04-26T00:00:00Z"), ZoneOffset.UTC);
-        CandidateSelectionService selectionService = new CandidateSelectionService(repository, null, clock) {
+        CandidateSelectionService selectionService = new CandidateSelectionService(repository, null, workflowService(), clock) {
         };
 
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CandidateController(repository, selectionService, clock))
@@ -49,6 +50,15 @@ class CandidateControllerTest {
                 .andExpect(jsonPath("$[0].score").value(8.9d))
                 .andExpect(jsonPath("$[0].recommendationReason").value("Strong AI relevance"))
                 .andExpect(jsonPath("$[1].id").value(2));
+    }
+
+    private LearningWorkflowService workflowService() {
+        return new LearningWorkflowService(null, null, null, null, null, null, null, null, Clock.systemUTC()) {
+            @Override
+            public com.ailearn.entity.LearningArticleEntity processLearningArticle(Long learningArticleId) {
+                return null;
+            }
+        };
     }
 
     private CandidateArticleRepository repository(List<CandidateArticleEntity> articles) {

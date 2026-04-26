@@ -8,4 +8,6 @@ import java.util.List;
 public interface VocabularyItemRepository extends JpaRepository<VocabularyItemEntity, Long> {
 
     List<VocabularyItemEntity> findByLearningArticleIdOrderByCreatedAtAsc(Long learningArticleId);
+
+    void deleteByLearningArticleId(Long learningArticleId);
 }

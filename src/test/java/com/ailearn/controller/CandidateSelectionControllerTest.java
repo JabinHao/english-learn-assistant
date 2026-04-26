@@ -3,6 +3,7 @@ package com.ailearn.controller;
 import com.ailearn.api.learning.SelectCandidateResponse;
 import com.ailearn.repository.CandidateArticleRepository;
 import com.ailearn.service.learning.CandidateSelectionService;
+import com.ailearn.service.learning.LearningWorkflowService;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
@@ -26,6 +27,7 @@ class CandidateSelectionControllerTest {
         CandidateSelectionService selectionService = new CandidateSelectionService(
                 repository(),
                 null,
+                workflowService(),
                 Clock.fixed(Instant.parse("2026-04-26T00:00:00Z"), ZoneOffset.UTC)
         ) {
             @Override
@@ -53,6 +55,7 @@ class CandidateSelectionControllerTest {
         CandidateSelectionService selectionService = new CandidateSelectionService(
                 repository(),
                 null,
+                workflowService(),
                 Clock.fixed(Instant.parse("2026-04-26T00:00:00Z"), ZoneOffset.UTC)
         ) {
             @Override
@@ -84,5 +87,14 @@ class CandidateSelectionControllerTest {
                     default -> throw new UnsupportedOperationException(method.getName());
                 }
         );
+    }
+
+    private LearningWorkflowService workflowService() {
+        return new LearningWorkflowService(null, null, null, null, null, null, null, null, Clock.systemUTC()) {
+            @Override
+            public com.ailearn.entity.LearningArticleEntity processLearningArticle(Long learningArticleId) {
+                return null;
+            }
+        };
     }
 }
