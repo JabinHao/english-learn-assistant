@@ -1,8 +1,10 @@
 package com.ailearn.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,6 +38,11 @@ public class AppConfig {
 
     public void setFilters(Filters filters) {
         this.filters = filters;
+    }
+
+    @Bean
+    Clock systemClock() {
+        return Clock.systemDefaultZone();
     }
 
     public static class Candidate {

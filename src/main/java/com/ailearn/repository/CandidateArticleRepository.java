@@ -8,4 +8,6 @@ import java.util.List;
 public interface CandidateArticleRepository extends JpaRepository<CandidateArticleEntity, Long> {
 
     List<CandidateArticleEntity> findByBatchRunDateOrderByRankOrderAscCreatedAtAsc(java.time.LocalDate runDate);
+
+    void deleteByBatchId(Long batchId);
 }
