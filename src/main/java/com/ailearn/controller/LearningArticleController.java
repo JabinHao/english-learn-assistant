@@ -1,0 +1,75 @@
+package com.ailearn.controller;
+
+import com.ailearn.api.learning.LearningArticleResponse;
+import com.ailearn.entity.ArticleParagraphEntity;
+import com.ailearn.entity.LearningArticleEntity;
+import com.ailearn.entity.VocabularyItemEntity;
+import com.ailearn.repository.ArticleParagraphRepository;
+import com.ailearn.repository.LearningArticleRepository;
+import com.ailearn.repository.VocabularyItemRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/learning-articles")
+public class LearningArticleController {
+
+    private final LearningArticleRepository learningArticleRepository;
+    private final ArticleParagraphRepository articleParagraphRepository;
+    private final VocabularyItemRepository vocabularyItemRepository;
+
+    public LearningArticleController(
+            LearningArticleRepository learningArticleRepository,
+            ArticleParagraphRepository articleParagraphRepository,
+            VocabularyItemRepository vocabularyItemRepository
+    ) {
+        this.learningArticleRepository = learningArticleRepository;
+        this.articleParagraphRepository = articleParagraphRepository;
+        this.vocabularyItemRepository = vocabularyItemRepository;
+    }
+
+    @GetMapping("/{learningArticleId}")
+    public LearningArticleResponse getLearningArticle(@PathVariable Long learningArticleId) {
+        LearningArticleEntity learningArticle = learningArticleRepository.findById(learningArticleId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Learning article not found"));
+        List<ArticleParagraphEntity> paragraphs = articleParagraphRepository.findByLearningArticleIdOrderByParagraphIndexAsc(learningArticleId);
+        List<VocabularyItemEntity> vocabularyItems = vocabularyItemRepository.findByLearningArticleIdOrderByCreatedAtAsc(learningArticleId);
+
+        return new LearningArticleResponse(
+                learningArticle.getId(),
+                learningArticle.getCandidateArticle().getId(),
+                learningArticle.getStatus(),
+                learningArticle.getTitle(),
+                learningArticle.getUrl(),
+                learningArticle.getSource(),
+                learningArticle.getPublishedAt(),
+                learningArticle.getArticleContent(),
+                learningArticle.getSummary(),
+                paragraphs.stream()
+                        .map(paragraph -> new LearningArticleResponse.ParagraphResponse(
+                                paragraph.getParagraphIndex(),
+                                paragraph.getEnglishText(),
+                                paragraph.getChineseText()
+                        ))
+                        .toList(),
+                vocabularyItems.stream()
+                        .map(item -> new LearningArticleResponse.VocabularyItemResponse(
+                                item.getWord(),
+                                item.getLemma(),
+                                item.getType(),
+                                item.getIpa(),
+                                item.getEnglishDefinition(),
+                                item.getChineseDefinition(),
+                                item.getSourceSentence(),
+                                item.isEudicPushed()
+                        ))
+                        .toList()
+        );
+    }
+}
