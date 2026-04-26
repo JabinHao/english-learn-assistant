@@ -45,6 +45,11 @@ ailearn:
       - multimodal
       - reasoning
       - openai
+  eudic:
+    base-url: ${AILEARN_EUDIC_BASE_URL:https://api.frdic.com}
+    auth-token: ${AILEARN_EUDIC_AUTH_TOKEN:}
+    study-list-name: ${AILEARN_EUDIC_STUDY_LIST_NAME:ai-learn}
+    language: ${AILEARN_EUDIC_LANGUAGE:en}
 
 server:
   port: ${PORT:8080}

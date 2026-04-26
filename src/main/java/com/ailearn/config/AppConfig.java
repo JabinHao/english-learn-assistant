@@ -13,6 +13,7 @@ import java.util.List;
 public class AppConfig {
 
     private Candidate candidate = new Candidate();
+    private Eudic eudic = new Eudic();
     private Rss rss = new Rss();
     private Filters filters = new Filters();
 
@@ -22,6 +23,14 @@ public class AppConfig {
 
     public void setCandidate(Candidate candidate) {
         this.candidate = candidate;
+    }
+
+    public Eudic getEudic() {
+        return eudic;
+    }
+
+    public void setEudic(Eudic eudic) {
+        this.eudic = eudic;
     }
 
     public Rss getRss() {
@@ -81,6 +90,45 @@ public class AppConfig {
 
         public void setMinScore(double minScore) {
             this.minScore = minScore;
+        }
+    }
+
+    public static class Eudic {
+        private String baseUrl = "https://api.frdic.com";
+        private String authToken = "";
+        private String studyListName = "ai-learn";
+        private String language = "en";
+
+        public String getBaseUrl() {
+            return baseUrl;
+        }
+
+        public void setBaseUrl(String baseUrl) {
+            this.baseUrl = baseUrl;
+        }
+
+        public String getAuthToken() {
+            return authToken;
+        }
+
+        public void setAuthToken(String authToken) {
+            this.authToken = authToken;
+        }
+
+        public String getStudyListName() {
+            return studyListName;
+        }
+
+        public void setStudyListName(String studyListName) {
+            this.studyListName = studyListName;
+        }
+
+        public String getLanguage() {
+            return language;
+        }
+
+        public void setLanguage(String language) {
+            this.language = language;
         }
     }
 
