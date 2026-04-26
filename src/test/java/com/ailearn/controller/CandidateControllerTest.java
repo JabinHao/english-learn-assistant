@@ -3,6 +3,7 @@ package com.ailearn.controller;
 import com.ailearn.entity.CandidateArticleEntity;
 import com.ailearn.entity.CandidateBatchEntity;
 import com.ailearn.repository.CandidateArticleRepository;
+import com.ailearn.service.learning.CandidateSelectionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -33,8 +34,10 @@ class CandidateControllerTest {
 
         CandidateArticleRepository repository = repository(List.of(first, second));
         Clock clock = Clock.fixed(Instant.parse("2026-04-26T00:00:00Z"), ZoneOffset.UTC);
+        CandidateSelectionService selectionService = new CandidateSelectionService(repository, null, clock) {
+        };
 
-        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CandidateController(repository, clock))
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CandidateController(repository, selectionService, clock))
                 .setMessageConverters(new MappingJackson2HttpMessageConverter())
                 .build();
 
