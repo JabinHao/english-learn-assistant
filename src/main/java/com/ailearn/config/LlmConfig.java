@@ -1,6 +1,7 @@
 package com.ailearn.config;
 
 import com.ailearn.service.candidate.CandidateRerankService;
+import com.ailearn.service.learning.TranslationService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,6 +30,11 @@ public class LlmConfig {
 
     @Bean
     CandidateRerankService.RerankChatClient rerankChatClient(ChatLanguageModel chatLanguageModel) {
+        return chatLanguageModel::chat;
+    }
+
+    @Bean
+    TranslationService.TranslationChatClient translationChatClient(ChatLanguageModel chatLanguageModel) {
         return chatLanguageModel::chat;
     }
 }

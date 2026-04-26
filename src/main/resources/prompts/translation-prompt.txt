@@ -1,0 +1,22 @@
+Translate the following English paragraphs into natural, accurate Simplified Chinese for an intermediate Chinese software engineer learning English.
+
+Requirements:
+- preserve the original meaning,
+- keep technical terms accurate,
+- do not omit content,
+- keep the same paragraph order.
+
+Return JSON only. Do not add markdown fences.
+
+Schema:
+{
+  "translations": [
+    {
+      "index": 1,
+      "chineseText": "string"
+    }
+  ]
+}
+
+Paragraphs:
+{{paragraphs}}
