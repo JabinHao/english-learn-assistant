@@ -1,0 +1,24 @@
+Extract the most important vocabulary items from the following English article paragraphs for a Chinese software engineer learning English.
+
+Include difficult words, phrases, and useful expressions that matter for understanding the text.
+Prefer article-specific or technically meaningful items over trivial words.
+
+Return JSON only. Do not add markdown fences.
+
+Schema:
+{
+  "items": [
+    {
+      "word": "string",
+      "lemma": "string",
+      "type": "WORD|PHRASE|EXPRESSION",
+      "ipa": "string",
+      "englishDefinition": "string",
+      "chineseDefinition": "string",
+      "sourceSentence": "string"
+    }
+  ]
+}
+
+Paragraphs:
+{{paragraphs}}

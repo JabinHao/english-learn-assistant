@@ -40,7 +40,7 @@ describe("BilingualParagraphs", () => {
   it("shows empty state when no paragraphs", () => {
     render(<BilingualParagraphs paragraphs={[]} />);
     expect(
-      screen.getByText("Paragraphs are not available yet."),
+      screen.getByText("No translated paragraphs are available yet."),
     ).toBeInTheDocument();
   });
 });

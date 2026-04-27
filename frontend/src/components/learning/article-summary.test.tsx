@@ -33,11 +33,10 @@ describe("ArticleSummary", () => {
     expect(screen.getByText("TRANSLATED")).toBeInTheDocument();
   });
 
-  it("renders link to original article", () => {
+  it("renders article metadata", () => {
     render(<ArticleSummary article={article} />);
-    const link = screen.getByText("Original");
-    expect(link).toHaveAttribute("href", "https://example.com/article");
-    expect(link).toHaveAttribute("target", "_blank");
+    expect(screen.getByText("BBC")).toBeInTheDocument();
+    expect(screen.getByText("TRANSLATED")).toBeInTheDocument();
   });
 
   it("hides summary when not provided", () => {

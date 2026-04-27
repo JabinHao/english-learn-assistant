@@ -6,8 +6,8 @@ export interface CandidateArticle {
   source: string;
   publishedAt: string;
   summary: string;
-  llmScore: number;
-  llmReason: string;
+  score: number | null;
+  recommendationReason: string;
   selected: boolean;
 }
 
@@ -21,23 +21,21 @@ export type LearningArticleStatus =
   | "FAILED";
 
 export interface ArticleParagraph {
-  id: number;
   paragraphIndex: number;
   englishText: string;
-  chineseText: string;
+  chineseText: string | null;
 }
 
 export type VocabularyType = "WORD" | "PHRASE" | "EXPRESSION";
 
 export interface VocabularyItem {
-  id: number;
   word: string;
-  lemma: string;
+  lemma: string | null;
   type: VocabularyType;
-  ipa: string;
-  englishDefinition: string;
-  chineseDefinition: string;
-  sourceSentence: string;
+  ipa: string | null;
+  englishDefinition: string | null;
+  chineseDefinition: string | null;
+  sourceSentence: string | null;
   eudicPushed: boolean;
 }
 
@@ -49,8 +47,8 @@ export interface LearningArticle {
   url: string;
   source: string;
   publishedAt: string;
+  articleContent: string | null;
   summary: string;
-  selectedAt: string;
   paragraphs: ArticleParagraph[];
   vocabularyItems: VocabularyItem[];
 }
@@ -67,5 +65,7 @@ export interface LearningHistoryItem {
 
 // Selection response
 export interface SelectCandidateResponse {
+  candidateArticleId: number;
   learningArticleId: number;
+  status: LearningArticleStatus;
 }

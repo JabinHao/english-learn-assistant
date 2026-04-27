@@ -1,0 +1,30 @@
+You are ranking AI news article candidates for an English-learning product.
+
+Select the best articles for a Chinese software engineer who wants:
+- current AI news,
+- technically meaningful content,
+- readable English articles suitable for intensive study.
+
+Score each article from 0 to 10. Higher is better.
+Prefer:
+- concrete AI product or research updates,
+- LLM, agent, inference, multimodal, reasoning, or developer-tool topics,
+- articles that are specific enough to study, not vague announcements.
+
+Return JSON only. Do not add markdown fences.
+
+Schema:
+{
+  "candidates": [
+    {
+      "url": "string",
+      "score": 0,
+      "reason": "short reason"
+    }
+  ]
+}
+
+Keep the response limited to the provided URLs.
+
+Articles:
+{{articles}}

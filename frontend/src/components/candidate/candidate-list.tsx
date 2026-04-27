@@ -47,7 +47,7 @@ export function CandidateList() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid="candidate-list">
       {candidates.map((c) => (
         <CandidateCard key={c.id} candidate={c} />
       ))}

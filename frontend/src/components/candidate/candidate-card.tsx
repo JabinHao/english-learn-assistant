@@ -12,7 +12,7 @@ import { SelectButton } from "./select-button";
 
 export function CandidateCard({ candidate }: { candidate: CandidateArticle }) {
   return (
-    <Card>
+    <Card className="border border-foreground/10 bg-card/90 backdrop-blur-sm">
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <div className="space-y-1">
@@ -31,6 +31,11 @@ export function CandidateCard({ candidate }: { candidate: CandidateArticle }) {
               <span>
                 {new Date(candidate.publishedAt).toLocaleDateString()}
               </span>
+              {typeof candidate.score === "number" ? (
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">
+                  Score {candidate.score.toFixed(1)}
+                </span>
+              ) : null}
             </CardDescription>
           </div>
         </div>
@@ -38,7 +43,7 @@ export function CandidateCard({ candidate }: { candidate: CandidateArticle }) {
       <CardContent className="space-y-2 text-sm">
         <p>{candidate.summary}</p>
         <p className="text-muted-foreground italic">
-          {candidate.llmReason}
+          {candidate.recommendationReason}
         </p>
       </CardContent>
       <CardFooter>

@@ -1,31 +1,77 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
-test.describe("Candidate to Learning flow", () => {
-  test("home page loads and shows candidate heading", async ({ page }) => {
-    await page.goto("/");
-    await expect(
-      page.getByRole("heading", { name: "Today's Candidates" }),
-    ).toBeVisible();
+test("candidate selection navigates to learning page", async ({ page }) => {
+  await page.route("**/api/candidates/today", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify([
+        {
+          id: 1,
+          title: "OpenAI reasoning update",
+          url: "https://example.com/a",
+          source: "OpenAI",
+          publishedAt: "2026-04-26T09:00:00",
+          summary: "A strong candidate for study.",
+          score: 9.2,
+          recommendationReason: "Timely AI product update",
+          selected: false,
+        },
+      ]),
+    });
   });
 
-  test("navigation links are present", async ({ page }) => {
-    await page.goto("/");
-    await expect(page.getByRole("link", { name: "Today" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "History" })).toBeVisible();
+  await page.route("**/api/candidates/1/select", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        learningArticleId: 88,
+        candidateArticleId: 1,
+        status: "EUDIC_PUSHED",
+      }),
+    });
   });
 
-  test("history page loads", async ({ page }) => {
-    await page.goto("/history");
-    await expect(
-      page.getByRole("heading", { name: "Learning History" }),
-    ).toBeVisible();
+  await page.route("**/api/learning-articles/88", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: 88,
+        candidateArticleId: 1,
+        status: "EUDIC_PUSHED",
+        title: "OpenAI reasoning update",
+        url: "https://example.com/a",
+        source: "OpenAI",
+        publishedAt: "2026-04-26T09:00:00",
+        articleContent: "Paragraph one.",
+        summary: "A strong candidate for study.",
+        paragraphs: [
+          {
+            paragraphIndex: 1,
+            englishText: "Paragraph one.",
+            chineseText: "第一段。",
+          },
+        ],
+        vocabularyItems: [
+          {
+            word: "reasoning",
+            lemma: "reasoning",
+            type: "WORD",
+            ipa: null,
+            englishDefinition: "careful thought",
+            chineseDefinition: "推理",
+            sourceSentence: "Paragraph one.",
+            eudicPushed: true,
+          },
+        ],
+      }),
+    });
   });
 
-  test("learning page shows error for invalid id", async ({ page }) => {
-    await page.goto("/learning/999999");
-    // Should show either loading state or error since backend is not running
-    await page.waitForTimeout(2000);
-    const content = await page.textContent("body");
-    expect(content).toBeTruthy();
-  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Study this article" }).click();
+  await expect(page).toHaveURL(/\/learning\/88$/);
+  await expect(page.getByText("OpenAI reasoning update")).toBeVisible();
 });

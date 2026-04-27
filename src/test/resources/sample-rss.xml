@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Sample AI Feed</title>
+    <item>
+      <title>  LLM orchestration in practice  </title>
+      <link>https://example.com/llm-orchestration</link>
+      <description><![CDATA[<p>A practical guide to <strong>agent orchestration</strong> patterns.</p>]]></description>
+      <pubDate>Fri, 25 Apr 2026 08:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>How inference latency shapes product design</title>
+      <link>https://example.com/inference-latency</link>
+      <description><![CDATA[
+      <div>Latency drives     different UX tradeoffs in AI products.</div>
+      ]]></description>
+      <pubDate>Fri, 25 Apr 2026 09:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>

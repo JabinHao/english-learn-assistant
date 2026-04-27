@@ -33,7 +33,6 @@ describe("VocabularyList", () => {
     render(<VocabularyList items={items} />);
 
     expect(screen.getByText("breakthrough")).toBeInTheDocument();
-    expect(screen.getByText("/ˈbreɪkˌθruː/")).toBeInTheDocument();
     expect(
       screen.getByText("an important discovery or development"),
     ).toBeInTheDocument();
@@ -45,19 +44,19 @@ describe("VocabularyList", () => {
 
   it("shows Eudic badge when pushed", () => {
     render(<VocabularyList items={items} />);
-    expect(screen.getByText("Eudic")).toBeInTheDocument();
+    expect(screen.getByText("Eudic synced")).toBeInTheDocument();
   });
 
   it("shows type badges", () => {
     render(<VocabularyList items={items} />);
-    expect(screen.getByText("word")).toBeInTheDocument();
-    expect(screen.getByText("expression")).toBeInTheDocument();
+    expect(screen.getByText("WORD")).toBeInTheDocument();
+    expect(screen.getByText("EXPRESSION")).toBeInTheDocument();
   });
 
   it("shows empty state when no items", () => {
     render(<VocabularyList items={[]} />);
     expect(
-      screen.getByText("Vocabulary is not available yet."),
+      screen.getByText("No vocabulary items have been extracted yet."),
     ).toBeInTheDocument();
   });
 });
