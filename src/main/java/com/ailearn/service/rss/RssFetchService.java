@@ -20,9 +20,15 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Service
 public class RssFetchService {
+
+    private static final Pattern VOID_HTML_TAG_PATTERN = Pattern.compile(
+            "<(br|hr|img|meta|input)(\\s[^>/]*)?>",
+            Pattern.CASE_INSENSITIVE
+    );
 
     private final AppConfig appConfig;
     private final HttpClient httpClient;
@@ -57,7 +63,8 @@ public class RssFetchService {
     public List<FeedArticle> parse(String xml, String sourceName) {
         try {
             SyndFeedInput input = new SyndFeedInput();
-            SyndFeed feed = input.build(new XmlReader(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))));
+            String sanitizedXml = sanitizeMalformedFeedXml(xml);
+            SyndFeed feed = input.build(new XmlReader(new ByteArrayInputStream(sanitizedXml.getBytes(StandardCharsets.UTF_8))));
 
             List<FeedArticle> articles = new ArrayList<>();
             for (SyndEntry entry : feed.getEntries()) {
@@ -73,6 +80,16 @@ public class RssFetchService {
         } catch (Exception exception) {
             throw new IllegalArgumentException("Failed to parse RSS XML", exception);
         }
+    }
+
+    private String sanitizeMalformedFeedXml(String xml) {
+        return VOID_HTML_TAG_PATTERN.matcher(xml).replaceAll(matchResult -> {
+            String tag = matchResult.group();
+            if (tag.endsWith("/>")) {
+                return tag;
+            }
+            return tag.substring(0, tag.length() - 1) + "/>";
+        });
     }
 
     private String fetch(String url) throws Exception {

@@ -1,9 +1,35 @@
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { VocabularyItem } from "@/lib/api/types";
+ "use client";
 
-export function VocabularyList({ items }: { items: VocabularyItem[] }) {
-  if (items.length === 0) {
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { pushVocabularyItem } from "@/lib/api/learning";
+import type { VocabularyItem } from "@/lib/api/types";
+import { useState } from "react";
+
+export function VocabularyList({
+  learningArticleId,
+  items,
+}: {
+  learningArticleId: number;
+  items: VocabularyItem[];
+}) {
+  const [localItems, setLocalItems] = useState(items);
+  const [pushingId, setPushingId] = useState<number | null>(null);
+
+  async function handlePush(itemId: number) {
+    setPushingId(itemId);
+    try {
+      const updated = await pushVocabularyItem(learningArticleId, itemId);
+      setLocalItems((current) =>
+        current.map((item) => (item.id === itemId ? updated : item)),
+      );
+    } finally {
+      setPushingId(null);
+    }
+  }
+
+  if (localItems.length === 0) {
     return (
       <Card className="border border-dashed border-foreground/15">
         <CardHeader>
@@ -22,16 +48,39 @@ export function VocabularyList({ items }: { items: VocabularyItem[] }) {
         <CardTitle className="text-lg">Vocabulary</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {items.map((item) => (
+        {localItems.map((item) => (
           <div
-            key={`${item.word}-${item.type}`}
+            key={item.id}
             className="rounded-2xl border border-foreground/10 bg-background/80 p-4"
           >
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="text-base font-semibold">{item.word}</div>
-              <Badge variant="secondary">{item.type}</Badge>
-              {item.eudicPushed ? (
-                <Badge variant="outline">Eudic synced</Badge>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="text-base font-semibold">{item.word}</div>
+                  <Badge variant="secondary">{item.type}</Badge>
+                  {item.eudicPushed ? (
+                    <Badge variant="outline">Eudic synced</Badge>
+                  ) : null}
+                </div>
+                {item.ipa ? (
+                  <p className="font-mono text-xs text-muted-foreground">
+                    {item.ipa}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    IPA unavailable
+                  </p>
+                )}
+              </div>
+              {!item.eudicPushed ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={pushingId === item.id}
+                  onClick={() => handlePush(item.id)}
+                >
+                  {pushingId === item.id ? "Pushing..." : "Add to Eudic"}
+                </Button>
               ) : null}
             </div>
             <div className="mt-2 space-y-1 text-sm">

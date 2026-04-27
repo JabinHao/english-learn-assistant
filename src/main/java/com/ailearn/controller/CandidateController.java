@@ -4,6 +4,7 @@ import com.ailearn.api.candidate.CandidateArticleResponse;
 import com.ailearn.api.learning.SelectCandidateResponse;
 import com.ailearn.entity.CandidateArticleEntity;
 import com.ailearn.repository.CandidateArticleRepository;
+import com.ailearn.service.candidate.CandidateGenerationService;
 import com.ailearn.service.learning.CandidateSelectionService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,15 +21,18 @@ import java.util.List;
 public class CandidateController {
 
     private final CandidateArticleRepository candidateArticleRepository;
+    private final CandidateGenerationService candidateGenerationService;
     private final CandidateSelectionService candidateSelectionService;
     private final Clock clock;
 
     public CandidateController(
             CandidateArticleRepository candidateArticleRepository,
+            CandidateGenerationService candidateGenerationService,
             CandidateSelectionService candidateSelectionService,
             Clock clock
     ) {
         this.candidateArticleRepository = candidateArticleRepository;
+        this.candidateGenerationService = candidateGenerationService;
         this.candidateSelectionService = candidateSelectionService;
         this.clock = clock;
     }
@@ -39,6 +43,12 @@ public class CandidateController {
         return candidateArticleRepository.findByBatchRunDateOrderByRankOrderAscCreatedAtAsc(runDate).stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    @PostMapping("/generate")
+    public List<CandidateArticleResponse> generateTodayCandidates() {
+        candidateGenerationService.generateToday();
+        return getTodayCandidates();
     }
 
     @PostMapping("/{candidateId}/select")

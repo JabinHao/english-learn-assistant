@@ -18,10 +18,12 @@ public class LlmConfig {
     ChatLanguageModel chatLanguageModel(
             @Value("${langchain4j.open-ai.chat-model.api-key}") String apiKey,
             @Value("${langchain4j.open-ai.chat-model.model-name}") String modelName,
-            @Value("${langchain4j.open-ai.chat-model.temperature}") Double temperature
+            @Value("${langchain4j.open-ai.chat-model.temperature}") Double temperature,
+            @Value("${langchain4j.open-ai.chat-model.base-url}") String baseUrl
     ) {
         return OpenAiChatModel.builder()
                 .apiKey(apiKey)
+                .baseUrl(baseUrl)
                 .modelName(modelName)
                 .temperature(temperature)
                 .timeout(Duration.ofSeconds(30))

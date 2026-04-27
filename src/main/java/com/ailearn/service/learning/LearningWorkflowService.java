@@ -97,6 +97,41 @@ public class LearningWorkflowService {
         }
     }
 
+    @Transactional
+    public VocabularyItemEntity pushVocabularyItem(Long learningArticleId, Long vocabularyItemId) {
+        LearningArticleEntity learningArticle = learningArticleRepository.findById(learningArticleId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Learning article not found"));
+        VocabularyItemEntity item = vocabularyItemRepository.findById(vocabularyItemId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vocabulary item not found"));
+
+        if (!item.getLearningArticle().getId().equals(learningArticleId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Vocabulary item not found");
+        }
+        if (!eudicClient.isConfigured()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Eudic is not configured");
+        }
+
+        String studyListId = eudicClient.ensureStudyList();
+        boolean pushed = eudicClient.pushWord(studyListId, item);
+        if (!pushed) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to push vocabulary item to Eudic");
+        }
+
+        item.setEudicPushed(true);
+        item.setEudicPushedAt(LocalDateTime.now(clock));
+        VocabularyItemEntity savedItem = vocabularyItemRepository.save(item);
+
+        boolean allPushed = vocabularyItemRepository.findByLearningArticleIdOrderByCreatedAtAsc(learningArticleId).stream()
+                .allMatch(VocabularyItemEntity::isEudicPushed);
+        if (allPushed) {
+            learningArticle.setStatus(STATUS_EUDIC_PUSHED);
+            learningArticle.setEudicPushedAt(LocalDateTime.now(clock));
+            learningArticleRepository.save(learningArticle);
+        }
+
+        return savedItem;
+    }
+
     private List<ArticleParagraphEntity> toParagraphEntities(
             LearningArticleEntity learningArticle,
             List<String> paragraphs,

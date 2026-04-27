@@ -24,6 +24,7 @@ public record LearningArticleResponse(
     }
 
     public record VocabularyItemResponse(
+            Long id,
             String word,
             String lemma,
             String type,

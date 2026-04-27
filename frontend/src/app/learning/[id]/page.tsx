@@ -33,7 +33,10 @@ export default async function LearningArticlePage({
       <ArticleSummary article={article} />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.9fr)]">
         <BilingualParagraphs paragraphs={article.paragraphs} />
-        <VocabularyList items={article.vocabularyItems} />
+        <VocabularyList
+          learningArticleId={article.id}
+          items={article.vocabularyItems}
+        />
       </div>
     </div>
   );

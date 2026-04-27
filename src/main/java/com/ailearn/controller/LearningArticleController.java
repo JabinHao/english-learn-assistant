@@ -7,9 +7,11 @@ import com.ailearn.entity.VocabularyItemEntity;
 import com.ailearn.repository.ArticleParagraphRepository;
 import com.ailearn.repository.LearningArticleRepository;
 import com.ailearn.repository.VocabularyItemRepository;
+import com.ailearn.service.learning.LearningWorkflowService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
@@ -23,15 +25,18 @@ public class LearningArticleController {
     private final LearningArticleRepository learningArticleRepository;
     private final ArticleParagraphRepository articleParagraphRepository;
     private final VocabularyItemRepository vocabularyItemRepository;
+    private final LearningWorkflowService learningWorkflowService;
 
     public LearningArticleController(
             LearningArticleRepository learningArticleRepository,
             ArticleParagraphRepository articleParagraphRepository,
-            VocabularyItemRepository vocabularyItemRepository
+            VocabularyItemRepository vocabularyItemRepository,
+            LearningWorkflowService learningWorkflowService
     ) {
         this.learningArticleRepository = learningArticleRepository;
         this.articleParagraphRepository = articleParagraphRepository;
         this.vocabularyItemRepository = vocabularyItemRepository;
+        this.learningWorkflowService = learningWorkflowService;
     }
 
     @GetMapping("/{learningArticleId}")
@@ -59,7 +64,23 @@ public class LearningArticleController {
                         ))
                         .toList(),
                 vocabularyItems.stream()
-                        .map(item -> new LearningArticleResponse.VocabularyItemResponse(
+                        .map(this::toVocabularyResponse)
+                        .toList()
+        );
+    }
+
+    @PostMapping("/{learningArticleId}/vocabulary/{vocabularyItemId}/push")
+    public LearningArticleResponse.VocabularyItemResponse pushVocabularyItem(
+            @PathVariable Long learningArticleId,
+            @PathVariable Long vocabularyItemId
+    ) {
+        VocabularyItemEntity item = learningWorkflowService.pushVocabularyItem(learningArticleId, vocabularyItemId);
+        return toVocabularyResponse(item);
+    }
+
+    private LearningArticleResponse.VocabularyItemResponse toVocabularyResponse(VocabularyItemEntity item) {
+        return new LearningArticleResponse.VocabularyItemResponse(
+                                item.getId(),
                                 item.getWord(),
                                 item.getLemma(),
                                 item.getType(),
@@ -68,8 +89,6 @@ public class LearningArticleController {
                                 item.getChineseDefinition(),
                                 item.getSourceSentence(),
                                 item.isEudicPushed()
-                        ))
-                        .toList()
         );
     }
 }

@@ -37,6 +37,17 @@ class RssFetchServiceTest {
         assertThat(articles.get(1).summary()).isEqualTo("Latency drives different UX tradeoffs in AI products.");
     }
 
+    @Test
+    void parse_shouldHandleMalformedVoidHtmlTagsInsideFeedContent() throws IOException {
+        String xml = loadFixture("sample-rss-malformed-void-tags.xml");
+
+        List<FeedArticle> articles = rssFetchService.parse(xml, "Test Feed");
+
+        assertThat(articles).hasSize(1);
+        assertThat(articles.getFirst().title()).isEqualTo("Malformed feed content");
+        assertThat(articles.getFirst().summary()).isEqualTo("Line one Line two");
+    }
+
     private String loadFixture(String name) throws IOException {
         try (var stream = getClass().getClassLoader().getResourceAsStream(name)) {
             assert stream != null;

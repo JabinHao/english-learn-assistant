@@ -2,6 +2,7 @@ Extract the most important vocabulary items from the following English article p
 
 Include difficult words, phrases, and useful expressions that matter for understanding the text.
 Prefer article-specific or technically meaningful items over trivial words.
+For single words, provide IPA whenever you know it. Only leave ipa empty when you truly cannot infer it.
 
 Return JSON only. Do not add markdown fences.
 

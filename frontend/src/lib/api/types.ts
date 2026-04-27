@@ -29,6 +29,7 @@ export interface ArticleParagraph {
 export type VocabularyType = "WORD" | "PHRASE" | "EXPRESSION";
 
 export interface VocabularyItem {
+  id: number;
   word: string;
   lemma: string | null;
   type: VocabularyType;

@@ -3,6 +3,7 @@ package com.ailearn.controller;
 import com.ailearn.entity.CandidateArticleEntity;
 import com.ailearn.entity.CandidateBatchEntity;
 import com.ailearn.repository.CandidateArticleRepository;
+import com.ailearn.service.candidate.CandidateGenerationService;
 import com.ailearn.service.learning.CandidateSelectionService;
 import com.ailearn.service.learning.LearningWorkflowService;
 import org.junit.jupiter.api.Test;
@@ -18,8 +19,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -37,8 +40,9 @@ class CandidateControllerTest {
         Clock clock = Clock.fixed(Instant.parse("2026-04-26T00:00:00Z"), ZoneOffset.UTC);
         CandidateSelectionService selectionService = new CandidateSelectionService(repository, null, workflowService(), clock) {
         };
+        CandidateGenerationService generationService = generationService();
 
-        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CandidateController(repository, selectionService, clock))
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CandidateController(repository, generationService, selectionService, clock))
                 .setMessageConverters(new MappingJackson2HttpMessageConverter())
                 .build();
 
@@ -52,11 +56,50 @@ class CandidateControllerTest {
                 .andExpect(jsonPath("$[1].id").value(2));
     }
 
+    @Test
+    void generateTodayCandidates_shouldTriggerGenerationAndReturnTodayCandidates() throws Exception {
+        CandidateBatchEntity batch = new CandidateBatchEntity();
+        batch.setRunDate(LocalDate.of(2026, 4, 26));
+
+        CandidateArticleEntity article = article(1L, batch, "Latest reasoning model", "https://example.com/a", 1, 8.9d, "Strong AI relevance");
+        CandidateArticleRepository repository = repository(List.of(article));
+        Clock clock = Clock.fixed(Instant.parse("2026-04-26T00:00:00Z"), ZoneOffset.UTC);
+        AtomicBoolean triggered = new AtomicBoolean(false);
+        CandidateGenerationService generationService = generationService(triggered);
+        CandidateSelectionService selectionService = new CandidateSelectionService(repository, null, workflowService(), clock) {
+        };
+
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CandidateController(repository, generationService, selectionService, clock))
+                .setMessageConverters(new MappingJackson2HttpMessageConverter())
+                .build();
+
+        mockMvc.perform(post("/api/candidates/generate"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].title").value("Latest reasoning model"));
+
+        org.junit.jupiter.api.Assertions.assertTrue(triggered.get());
+    }
+
     private LearningWorkflowService workflowService() {
         return new LearningWorkflowService(null, null, null, null, null, null, null, null, Clock.systemUTC()) {
             @Override
             public com.ailearn.entity.LearningArticleEntity processLearningArticle(Long learningArticleId) {
                 return null;
+            }
+        };
+    }
+
+    private CandidateGenerationService generationService() {
+        return generationService(new AtomicBoolean(false));
+    }
+
+    private CandidateGenerationService generationService(AtomicBoolean triggered) {
+        return new CandidateGenerationService(null, null, null, null, null, Clock.systemUTC()) {
+            @Override
+            public CandidateBatchEntity generateToday() {
+                triggered.set(true);
+                return new CandidateBatchEntity();
             }
         };
     }

@@ -13,6 +13,7 @@ import java.util.List;
 public class AppConfig {
 
     private Candidate candidate = new Candidate();
+    private Cors cors = new Cors();
     private Eudic eudic = new Eudic();
     private Rss rss = new Rss();
     private Filters filters = new Filters();
@@ -31,6 +32,14 @@ public class AppConfig {
 
     public void setEudic(Eudic eudic) {
         this.eudic = eudic;
+    }
+
+    public Cors getCors() {
+        return cors;
+    }
+
+    public void setCors(Cors cors) {
+        this.cors = cors;
     }
 
     public Rss getRss() {
@@ -90,6 +99,21 @@ public class AppConfig {
 
         public void setMinScore(double minScore) {
             this.minScore = minScore;
+        }
+    }
+
+    public static class Cors {
+        private List<String> allowedOrigins = new ArrayList<>(List.of(
+                "http://localhost:3000",
+                "http://127.0.0.1:3000"
+        ));
+
+        public List<String> getAllowedOrigins() {
+            return allowedOrigins;
+        }
+
+        public void setAllowedOrigins(List<String> allowedOrigins) {
+            this.allowedOrigins = allowedOrigins;
         }
     }
 
@@ -167,6 +191,7 @@ public class AppConfig {
 
     public static class Filters {
         private List<String> keywords = new ArrayList<>();
+        private int minTextLength = 120;
 
         public List<String> getKeywords() {
             return keywords;
@@ -174,6 +199,14 @@ public class AppConfig {
 
         public void setKeywords(List<String> keywords) {
             this.keywords = keywords;
+        }
+
+        public int getMinTextLength() {
+            return minTextLength;
+        }
+
+        public void setMinTextLength(int minTextLength) {
+            this.minTextLength = minTextLength;
         }
     }
 }

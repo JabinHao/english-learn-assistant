@@ -15,13 +15,18 @@ spring:
 langchain4j:
   open-ai:
     chat-model:
-      api-key: ${OPENAI_API_KEY:test-key}
-      model-name: ${OPENAI_CHAT_MODEL:gpt-4o-mini}
+      base-url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+      api-key: sk-674270a2db9643c49c8e1b338e056dc2
+      model-name: ${OPENAI_CHAT_MODEL:qwen3.6-flash-2026-04-16}
       temperature: 0.2
 
 ailearn:
+  cors:
+    allowed-origins:
+      - http://localhost:3000
+      - http://127.0.0.1:3000
   candidate:
-    cron: ${AILEARN_CANDIDATE_CRON:0 0 8 * * *}
+    cron: ${AILEARN_CANDIDATE_CRON:0 32 0 * * *}
     lookback-hours: ${AILEARN_CANDIDATE_LOOKBACK_HOURS:36}
     max-candidates: ${AILEARN_CANDIDATE_MAX:5}
     min-score: ${AILEARN_CANDIDATE_MIN_SCORE:6.5}
@@ -34,6 +39,7 @@ ailearn:
       - name: OpenAI Blog
         url: https://openai.com/news/rss.xml
   filters:
+    min-text-length: ${AILEARN_FILTERS_MIN_TEXT_LENGTH:120}
     keywords:
       - ai
       - llm

@@ -38,12 +38,14 @@ describe("learning view", () => {
 
     const vocabularyHtml = renderToStaticMarkup(
       <VocabularyList
+        learningArticleId={88}
         items={[
           {
+            id: 1,
             word: "reasoning",
             lemma: "reasoning",
             type: "WORD",
-            ipa: null,
+            ipa: "/ˈriːzənɪŋ/",
             englishDefinition: "careful thought",
             chineseDefinition: "推理",
             sourceSentence: "Paragraph one.",
@@ -57,6 +59,7 @@ describe("learning view", () => {
     expect(paragraphHtml).toContain("Paragraph one.");
     expect(paragraphHtml).toContain("第一段。");
     expect(vocabularyHtml).toContain("reasoning");
+    expect(vocabularyHtml).toContain("/ˈriːzənɪŋ/");
     expect(vocabularyHtml).toContain("Eudic synced");
   });
 });

@@ -59,6 +59,24 @@ class CandidateCoarseFilterTest {
         assertThat(result).extracting(FeedArticle::url).containsExactly("https://example.com/rag");
     }
 
+    @Test
+    void filter_shouldRemoveArticlesWithTooLittleText() {
+        CandidateCoarseFilter filter = new CandidateCoarseFilter(config(), clock);
+
+        List<FeedArticle> result = filter.filter(List.of(
+                new FeedArticle(
+                        "AI",
+                        "https://example.com/short",
+                        "Test",
+                        "Brief.",
+                        LocalDateTime.now(clock).minusHours(1)
+                ),
+                article("LLM orchestration patterns for product teams", "https://example.com/long", -1)
+        ));
+
+        assertThat(result).extracting(FeedArticle::url).containsExactly("https://example.com/long");
+    }
+
     private AppConfig config() {
         AppConfig appConfig = new AppConfig();
         AppConfig.Candidate candidate = new AppConfig.Candidate();
@@ -67,6 +85,7 @@ class CandidateCoarseFilterTest {
 
         AppConfig.Filters filters = new AppConfig.Filters();
         filters.setKeywords(List.of("ai", "llm", "rag", "agent", "inference"));
+        filters.setMinTextLength(40);
         appConfig.setFilters(filters);
         return appConfig;
     }

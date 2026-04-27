@@ -1,6 +1,7 @@
 package com.ailearn.controller;
 
 import com.ailearn.api.learning.SelectCandidateResponse;
+import com.ailearn.service.candidate.CandidateGenerationService;
 import com.ailearn.repository.CandidateArticleRepository;
 import com.ailearn.service.learning.CandidateSelectionService;
 import com.ailearn.service.learning.LearningWorkflowService;
@@ -38,6 +39,7 @@ class CandidateSelectionControllerTest {
 
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CandidateController(
                         repository(),
+                        generationService(),
                         selectionService,
                         Clock.fixed(Instant.parse("2026-04-26T00:00:00Z"), ZoneOffset.UTC)))
                 .setMessageConverters(new MappingJackson2HttpMessageConverter())
@@ -66,6 +68,7 @@ class CandidateSelectionControllerTest {
 
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new CandidateController(
                         repository(),
+                        generationService(),
                         selectionService,
                         Clock.fixed(Instant.parse("2026-04-26T00:00:00Z"), ZoneOffset.UTC)))
                 .setMessageConverters(new MappingJackson2HttpMessageConverter())
@@ -87,6 +90,11 @@ class CandidateSelectionControllerTest {
                     default -> throw new UnsupportedOperationException(method.getName());
                 }
         );
+    }
+
+    private CandidateGenerationService generationService() {
+        return new CandidateGenerationService(null, null, null, null, null, Clock.systemUTC()) {
+        };
     }
 
     private LearningWorkflowService workflowService() {

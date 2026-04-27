@@ -39,6 +39,9 @@ public class CandidateCoarseFilter {
             if (article.publishedAt() != null && article.publishedAt().isBefore(cutoff)) {
                 continue;
             }
+            if (articleTextLength(article) < appConfig.getFilters().getMinTextLength()) {
+                continue;
+            }
             if (!matchesKeywords(article)) {
                 continue;
             }
@@ -57,5 +60,9 @@ public class CandidateCoarseFilter {
         return appConfig.getFilters().getKeywords().stream()
                 .map(keyword -> keyword.toLowerCase(Locale.ROOT))
                 .anyMatch(haystack::contains);
+    }
+
+    private int articleTextLength(FeedArticle article) {
+        return (article.title() + " " + article.summary()).trim().length();
     }
 }
