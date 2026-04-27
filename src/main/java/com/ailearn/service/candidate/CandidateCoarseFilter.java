@@ -2,6 +2,7 @@ package com.ailearn.service.candidate;
 
 import com.ailearn.config.AppConfig;
 import com.ailearn.model.FeedArticle;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Clock;
@@ -17,6 +18,7 @@ public class CandidateCoarseFilter {
     private final AppConfig appConfig;
     private final Clock clock;
 
+    @Autowired
     public CandidateCoarseFilter(AppConfig appConfig) {
         this(appConfig, Clock.systemDefaultZone());
     }

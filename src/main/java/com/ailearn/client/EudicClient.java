@@ -4,6 +4,7 @@ import com.ailearn.config.AppConfig;
 import com.ailearn.entity.VocabularyItemEntity;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -21,6 +22,7 @@ public class EudicClient {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
 
+    @Autowired
     public EudicClient(AppConfig appConfig) {
         this(appConfig, HttpClient.newHttpClient(), new ObjectMapper());
     }

@@ -5,6 +5,7 @@ import com.ailearn.model.FeedArticle;
 import com.ailearn.model.RankedCandidate;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,7 @@ public class CandidateRerankService {
     private final RerankChatClient rerankChatClient;
     private final String promptTemplate;
 
+    @Autowired
     public CandidateRerankService(
             AppConfig appConfig,
             ObjectMapper objectMapper,

@@ -2,6 +2,7 @@ package com.ailearn.service.learning;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class TranslationService {
     private final TranslationChatClient translationChatClient;
     private final String promptTemplate;
 
+    @Autowired
     public TranslationService(
             ObjectMapper objectMapper,
             ResourceLoader resourceLoader,

@@ -7,6 +7,7 @@ import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
 import org.jsoup.Jsoup;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
@@ -26,6 +27,7 @@ public class RssFetchService {
     private final AppConfig appConfig;
     private final HttpClient httpClient;
 
+    @Autowired
     public RssFetchService(AppConfig appConfig) {
         this(appConfig, HttpClient.newHttpClient());
     }

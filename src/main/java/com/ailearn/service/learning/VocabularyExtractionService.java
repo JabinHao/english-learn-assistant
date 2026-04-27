@@ -3,6 +3,7 @@ package com.ailearn.service.learning;
 import com.ailearn.model.VocabularyCandidate;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class VocabularyExtractionService {
     private final VocabularyChatClient vocabularyChatClient;
     private final String promptTemplate;
 
+    @Autowired
     public VocabularyExtractionService(
             ObjectMapper objectMapper,
             ResourceLoader resourceLoader,
