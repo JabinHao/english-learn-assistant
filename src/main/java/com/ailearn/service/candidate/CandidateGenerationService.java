@@ -8,15 +8,21 @@ import com.ailearn.repository.CandidateArticleRepository;
 import com.ailearn.repository.CandidateBatchRepository;
 import com.ailearn.service.rss.RssFetchService;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class CandidateGenerationService {
+
+    private static final Logger log = LoggerFactory.getLogger(CandidateGenerationService.class);
 
     static final String STATUS_RUNNING = "RUNNING";
     static final String STATUS_COMPLETED = "COMPLETED";
@@ -48,6 +54,7 @@ public class CandidateGenerationService {
     @Transactional
     public CandidateBatchEntity generateToday() {
         LocalDate runDate = LocalDate.now(clock);
+        log.info("candidate.generation.start runDate={}", runDate);
         CandidateBatchEntity batch = candidateBatchRepository.findByRunDate(runDate)
                 .orElseGet(CandidateBatchEntity::new);
         batch.setRunDate(runDate);
@@ -57,31 +64,61 @@ public class CandidateGenerationService {
         batch = candidateBatchRepository.save(batch);
 
         try {
+            List<CandidateArticleEntity> preservedArticles = List.of();
             if (batch.getId() != null) {
-                candidateArticleRepository.deleteByBatchId(batch.getId());
+                candidateArticleRepository.deleteUnreferencedByBatchId(batch.getId());
+                preservedArticles = candidateArticleRepository.findByBatchIdOrderByRankOrderAscCreatedAtAsc(batch.getId());
             }
 
             List<FeedArticle> fetchedArticles = rssFetchService.fetchAll();
             List<FeedArticle> filteredArticles = candidateCoarseFilter.filter(fetchedArticles);
             List<RankedCandidate> rankedCandidates = candidateRerankService.rerank(filteredArticles);
+            List<RankedCandidate> newRankedCandidates = excludeExistingUrls(rankedCandidates, preservedArticles);
 
-            List<CandidateArticleEntity> candidateEntities = toEntities(batch, rankedCandidates);
+            List<CandidateArticleEntity> candidateEntities = toEntities(batch, newRankedCandidates, preservedArticles.size() + 1);
             if (!candidateEntities.isEmpty()) {
                 candidateArticleRepository.saveAll(candidateEntities);
             }
 
             batch.setSourceCount(fetchedArticles.size());
-            batch.setCandidateCount(candidateEntities.size());
+            batch.setCandidateCount(preservedArticles.size() + candidateEntities.size());
             batch.setStatus(STATUS_COMPLETED);
+            log.info(
+                    "candidate.generation.completed runDate={} sourceCount={} filteredCount={} preservedCount={} candidateCount={}",
+                    runDate,
+                    fetchedArticles.size(),
+                    filteredArticles.size(),
+                    preservedArticles.size(),
+                    preservedArticles.size() + candidateEntities.size()
+            );
             return candidateBatchRepository.save(batch);
         } catch (RuntimeException exception) {
             batch.setStatus(STATUS_FAILED);
             candidateBatchRepository.save(batch);
+            log.error("candidate.generation.failed runDate={} error={}", runDate, exception.getMessage(), exception);
             throw exception;
         }
     }
 
-    private List<CandidateArticleEntity> toEntities(CandidateBatchEntity batch, List<RankedCandidate> rankedCandidates) {
+    private List<RankedCandidate> excludeExistingUrls(
+            List<RankedCandidate> rankedCandidates,
+            List<CandidateArticleEntity> preservedArticles
+    ) {
+        Set<String> existingUrls = new HashSet<>();
+        for (CandidateArticleEntity preservedArticle : preservedArticles) {
+            existingUrls.add(preservedArticle.getUrl());
+        }
+
+        return rankedCandidates.stream()
+                .filter(candidate -> !existingUrls.contains(candidate.url()))
+                .toList();
+    }
+
+    private List<CandidateArticleEntity> toEntities(
+            CandidateBatchEntity batch,
+            List<RankedCandidate> rankedCandidates,
+            int startingRankOrder
+    ) {
         List<CandidateArticleEntity> entities = new ArrayList<>();
         for (int index = 0; index < rankedCandidates.size(); index++) {
             RankedCandidate rankedCandidate = rankedCandidates.get(index);
@@ -95,7 +132,7 @@ public class CandidateGenerationService {
             entity.setCoarseFilterReason("passed coarse filter");
             entity.setLlmScore(rankedCandidate.score());
             entity.setLlmReason(rankedCandidate.reason());
-            entity.setRankOrder(index + 1);
+            entity.setRankOrder(startingRankOrder + index);
             entity.setSelected(false);
             entities.add(entity);
         }

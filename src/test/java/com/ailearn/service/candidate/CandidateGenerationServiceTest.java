@@ -38,7 +38,11 @@ class CandidateGenerationServiceTest {
         AtomicLong idSequence = new AtomicLong(1L);
 
         CandidateBatchRepository batchRepository = batchRepositoryProxy(savedBatch, idSequence, Optional.empty());
-        CandidateArticleRepository articleRepository = articleRepositoryProxy(savedArticles, new AtomicReference<>(null));
+        CandidateArticleRepository articleRepository = articleRepositoryProxy(
+                savedArticles,
+                new AtomicReference<>(null),
+                new AtomicReference<>(List.of())
+        );
 
         CandidateGenerationService service = new CandidateGenerationService(
                 rssService(List.of(
@@ -75,7 +79,11 @@ class CandidateGenerationServiceTest {
         existingBatch.setRunDate(LocalDate.of(2026, 4, 26));
 
         CandidateBatchRepository batchRepository = batchRepositoryProxy(savedBatch, idSequence, Optional.of(existingBatch));
-        CandidateArticleRepository articleRepository = articleRepositoryProxy(new AtomicReference<>(List.of()), deletedBatchId);
+        CandidateArticleRepository articleRepository = articleRepositoryProxy(
+                new AtomicReference<>(List.of()),
+                deletedBatchId,
+                new AtomicReference<>(List.of())
+        );
 
         CandidateGenerationService service = new CandidateGenerationService(
                 failingRssService(new IllegalStateException("feed unavailable")),
@@ -92,6 +100,58 @@ class CandidateGenerationServiceTest {
 
         assertThat(deletedBatchId.get()).isEqualTo(42L);
         assertThat(savedBatch.get().getStatus()).isEqualTo(CandidateGenerationService.STATUS_FAILED);
+    }
+
+    @Test
+    void generateToday_shouldPreserveReferencedCandidatesAndSkipDuplicateUrls() {
+        AtomicReference<CandidateBatchEntity> savedBatch = new AtomicReference<>();
+        AtomicReference<List<CandidateArticleEntity>> savedArticles = new AtomicReference<>(List.of());
+        AtomicReference<Long> deletedBatchId = new AtomicReference<>();
+        AtomicLong idSequence = new AtomicLong(42L);
+
+        CandidateBatchEntity existingBatch = new CandidateBatchEntity();
+        ReflectionTestUtils.setField(existingBatch, "id", 42L);
+        existingBatch.setRunDate(LocalDate.of(2026, 4, 26));
+
+        CandidateArticleEntity preserved = new CandidateArticleEntity();
+        ReflectionTestUtils.setField(preserved, "id", 7L);
+        preserved.setBatch(existingBatch);
+        preserved.setTitle("Kept");
+        preserved.setUrl("https://example.com/kept");
+        preserved.setRankOrder(1);
+
+        CandidateBatchRepository batchRepository = batchRepositoryProxy(savedBatch, idSequence, Optional.of(existingBatch));
+        CandidateArticleRepository articleRepository = articleRepositoryProxy(
+                savedArticles,
+                deletedBatchId,
+                new AtomicReference<>(List.of(preserved))
+        );
+
+        CandidateGenerationService service = new CandidateGenerationService(
+                rssService(List.of(
+                        article("Kept", "https://example.com/kept"),
+                        article("Fresh", "https://example.com/fresh")
+                )),
+                coarseFilter(List.of(
+                        article("Kept", "https://example.com/kept"),
+                        article("Fresh", "https://example.com/fresh")
+                )),
+                rerankService(List.of(
+                        ranked("Kept", "https://example.com/kept", 9.1d),
+                        ranked("Fresh", "https://example.com/fresh", 8.6d)
+                )),
+                batchRepository,
+                articleRepository,
+                clock
+        );
+
+        CandidateBatchEntity batch = service.generateToday();
+
+        assertThat(deletedBatchId.get()).isEqualTo(42L);
+        assertThat(savedArticles.get()).hasSize(1);
+        assertThat(savedArticles.get().getFirst().getUrl()).isEqualTo("https://example.com/fresh");
+        assertThat(savedArticles.get().getFirst().getRankOrder()).isEqualTo(2);
+        assertThat(batch.getCandidateCount()).isEqualTo(2);
     }
 
     private CandidateBatchRepository batchRepositoryProxy(
@@ -122,7 +182,8 @@ class CandidateGenerationServiceTest {
 
     private CandidateArticleRepository articleRepositoryProxy(
             AtomicReference<List<CandidateArticleEntity>> savedArticles,
-            AtomicReference<Long> deletedBatchId
+            AtomicReference<Long> deletedBatchId,
+            AtomicReference<List<CandidateArticleEntity>> existingArticles
     ) {
         return (CandidateArticleRepository) Proxy.newProxyInstance(
                 CandidateArticleRepository.class.getClassLoader(),
@@ -134,10 +195,11 @@ class CandidateGenerationServiceTest {
                         savedArticles.set(articles);
                         yield articles;
                     }
-                    case "deleteByBatchId" -> {
+                    case "deleteUnreferencedByBatchId" -> {
                         deletedBatchId.set((Long) args[0]);
                         yield null;
                     }
+                    case "findByBatchIdOrderByRankOrderAscCreatedAtAsc" -> existingArticles.get();
                     case "hashCode" -> System.identityHashCode(proxy);
                     case "equals" -> proxy == args[0];
                     case "toString" -> "CandidateArticleRepositoryProxy";

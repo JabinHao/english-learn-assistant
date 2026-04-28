@@ -11,7 +11,19 @@ public interface CandidateArticleRepository extends JpaRepository<CandidateArtic
 
     List<CandidateArticleEntity> findByBatchRunDateOrderByRankOrderAscCreatedAtAsc(java.time.LocalDate runDate);
 
-    void deleteByBatchId(Long batchId);
+    List<CandidateArticleEntity> findByBatchIdOrderByRankOrderAscCreatedAtAsc(Long batchId);
+
+    @Modifying
+    @Query("""
+            delete from CandidateArticleEntity c
+            where c.batch.id = :batchId
+              and c.id not in (
+                  select la.candidateArticle.id
+                  from LearningArticleEntity la
+                  where la.candidateArticle.batch.id = :batchId
+              )
+            """)
+    void deleteUnreferencedByBatchId(Long batchId);
 
     @Modifying
     @Query("update CandidateArticleEntity c set c.selected = false where c.batch.id = :batchId")
