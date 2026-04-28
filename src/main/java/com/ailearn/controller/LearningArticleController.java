@@ -11,6 +11,7 @@ import com.ailearn.service.learning.LearningWorkflowService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -75,6 +76,15 @@ public class LearningArticleController {
             @PathVariable Long vocabularyItemId
     ) {
         VocabularyItemEntity item = learningWorkflowService.pushVocabularyItem(learningArticleId, vocabularyItemId);
+        return toVocabularyResponse(item);
+    }
+
+    @DeleteMapping("/{learningArticleId}/vocabulary/{vocabularyItemId}/push")
+    public LearningArticleResponse.VocabularyItemResponse removeVocabularyItem(
+            @PathVariable Long learningArticleId,
+            @PathVariable Long vocabularyItemId
+    ) {
+        VocabularyItemEntity item = learningWorkflowService.removeVocabularyItem(learningArticleId, vocabularyItemId);
         return toVocabularyResponse(item);
     }
 

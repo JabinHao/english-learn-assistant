@@ -59,6 +59,11 @@ describe("VocabularyList", () => {
     expect(screen.getByText("Add to Eudic")).toBeInTheDocument();
   });
 
+  it("shows remove button for synced items", () => {
+    render(<VocabularyList learningArticleId={88} items={items} />);
+    expect(screen.getByText("Remove from Eudic")).toBeInTheDocument();
+  });
+
   it("shows empty state when no items", () => {
     render(<VocabularyList learningArticleId={88} items={[]} />);
     expect(

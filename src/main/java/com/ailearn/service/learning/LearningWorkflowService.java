@@ -9,6 +9,8 @@ import com.ailearn.repository.ArticleParagraphRepository;
 import com.ailearn.repository.LearningArticleRepository;
 import com.ailearn.repository.VocabularyItemRepository;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -20,6 +22,8 @@ import java.util.List;
 
 @Service
 public class LearningWorkflowService {
+
+    private static final Logger log = LoggerFactory.getLogger(LearningWorkflowService.class);
 
     public static final String STATUS_CONTENT_READY = "CONTENT_READY";
     public static final String STATUS_TRANSLATED = "TRANSLATED";
@@ -65,6 +69,7 @@ public class LearningWorkflowService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Learning article not found"));
 
         try {
+            log.info("learning.workflow.start learningArticleId={} url={}", learningArticleId, learningArticle.getUrl());
             String articleContent = articleContentService.fetchArticleContent(learningArticle.getUrl());
             learningArticle.setArticleContent(articleContent);
             learningArticle.setStatus(STATUS_CONTENT_READY);
@@ -72,6 +77,7 @@ public class LearningWorkflowService {
 
             List<String> paragraphs = paragraphSplitService.split(articleContent);
             List<String> translations = translationService.translate(paragraphs);
+            log.info("learning.workflow.translated learningArticleId={} paragraphCount={}", learningArticleId, paragraphs.size());
 
             articleParagraphRepository.deleteByLearningArticleId(learningArticleId);
             articleParagraphRepository.saveAll(toParagraphEntities(learningArticle, paragraphs, translations));
@@ -83,16 +89,18 @@ public class LearningWorkflowService {
             List<VocabularyCandidate> vocabularyCandidates = vocabularyExtractionService.extract(paragraphs);
             vocabularyItemRepository.deleteByLearningArticleId(learningArticleId);
             List<VocabularyItemEntity> items = vocabularyItemRepository.saveAll(toVocabularyEntities(learningArticle, vocabularyCandidates));
+            log.info("learning.workflow.vocabulary_extracted learningArticleId={} vocabularyCount={}", learningArticleId, items.size());
 
             learningArticle.setStatus(STATUS_VOCAB_READY);
             learningArticle.setVocabularyExtractedAt(LocalDateTime.now(clock));
             learningArticleRepository.save(learningArticle);
 
-            pushVocabularyToEudic(learningArticle, items);
+            log.info("learning.workflow.completed learningArticleId={} status={}", learningArticleId, learningArticle.getStatus());
             return learningArticleRepository.save(learningArticle);
         } catch (RuntimeException exception) {
             learningArticle.setStatus(STATUS_FAILED);
             learningArticleRepository.save(learningArticle);
+            log.error("learning.workflow.failed learningArticleId={} error={}", learningArticleId, exception.getMessage(), exception);
             throw exception;
         }
     }
@@ -113,6 +121,9 @@ public class LearningWorkflowService {
 
         String studyListId = eudicClient.ensureStudyList();
         boolean pushed = eudicClient.pushWord(studyListId, item);
+        if (pushed) {
+            eudicClient.pushNote(studyListId, item);
+        }
         if (!pushed) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to push vocabulary item to Eudic");
         }
@@ -129,6 +140,41 @@ public class LearningWorkflowService {
             learningArticleRepository.save(learningArticle);
         }
 
+        return savedItem;
+    }
+
+    @Transactional
+    public VocabularyItemEntity removeVocabularyItem(Long learningArticleId, Long vocabularyItemId) {
+        LearningArticleEntity learningArticle = learningArticleRepository.findById(learningArticleId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Learning article not found"));
+        VocabularyItemEntity item = vocabularyItemRepository.findById(vocabularyItemId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vocabulary item not found"));
+
+        if (!item.getLearningArticle().getId().equals(learningArticleId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Vocabulary item not found");
+        }
+        if (!eudicClient.isConfigured()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Eudic is not configured");
+        }
+
+        String studyListId = eudicClient.ensureStudyList();
+        boolean removed = eudicClient.deleteWord(studyListId, item);
+        if (!removed) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to remove vocabulary item from Eudic");
+        }
+
+        item.setEudicPushed(false);
+        item.setEudicPushedAt(null);
+        VocabularyItemEntity savedItem = vocabularyItemRepository.save(item);
+        learningArticle.setStatus(STATUS_VOCAB_READY);
+        learningArticle.setEudicPushedAt(null);
+        learningArticleRepository.save(learningArticle);
+        log.info(
+                "learning.workflow.eudic_remove learningArticleId={} vocabularyItemId={} word={}",
+                learningArticleId,
+                vocabularyItemId,
+                item.getWord()
+        );
         return savedItem;
     }
 
@@ -170,27 +216,4 @@ public class LearningWorkflowService {
         return entities;
     }
 
-    private void pushVocabularyToEudic(LearningArticleEntity learningArticle, List<VocabularyItemEntity> items) {
-        if (!eudicClient.isConfigured() || items.isEmpty()) {
-            return;
-        }
-
-        String studyListId = eudicClient.ensureStudyList();
-        boolean allPushed = true;
-        for (VocabularyItemEntity item : items) {
-            boolean pushed = eudicClient.pushWord(studyListId, item);
-            item.setEudicPushed(pushed);
-            if (pushed) {
-                item.setEudicPushedAt(LocalDateTime.now(clock));
-            } else {
-                allPushed = false;
-            }
-        }
-        vocabularyItemRepository.saveAll(items);
-
-        if (allPushed) {
-            learningArticle.setStatus(STATUS_EUDIC_PUSHED);
-            learningArticle.setEudicPushedAt(LocalDateTime.now(clock));
-        }
-    }
 }

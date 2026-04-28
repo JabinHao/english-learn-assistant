@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class LearningWorkflowServiceTest {
 
     @Test
-    void processLearningArticle_shouldPersistContentParagraphsVocabularyAndEudicStatus() {
+    void processLearningArticle_shouldPersistContentParagraphsVocabularyWithoutAutoPushingToEudic() {
         Clock clock = Clock.fixed(Instant.parse("2026-04-26T01:00:00Z"), ZoneOffset.UTC);
         LearningArticleEntity article = learningArticle(88L, 7L);
         AtomicReference<LearningArticleEntity> savedArticle = new AtomicReference<>();
@@ -57,22 +57,7 @@ class LearningWorkflowServiceTest {
                 },
                 paragraphRepository(savedParagraphs),
                 vocabularyRepository(savedVocabulary),
-                new EudicClient(null) {
-                    @Override
-                    public boolean isConfigured() {
-                        return true;
-                    }
-
-                    @Override
-                    public String ensureStudyList() {
-                        return "list-123";
-                    }
-
-                    @Override
-                    public boolean pushWord(String studyListId, VocabularyItemEntity item) {
-                        return true;
-                    }
-                },
+                new EudicClient(null),
                 clock
         );
 
@@ -81,10 +66,11 @@ class LearningWorkflowServiceTest {
         assertThat(savedParagraphs.get()).hasSize(2);
         assertThat(savedParagraphs.get().getFirst().getChineseText()).isEqualTo("第一段。");
         assertThat(savedVocabulary.get()).hasSize(1);
-        assertThat(savedVocabulary.get().getFirst().isEudicPushed()).isTrue();
-        assertThat(result.getStatus()).isEqualTo("EUDIC_PUSHED");
+        assertThat(savedVocabulary.get().getFirst().isEudicPushed()).isFalse();
+        assertThat(result.getStatus()).isEqualTo("VOCAB_READY");
         assertThat(result.getTranslatedAt()).isEqualTo(LocalDateTime.of(2026, 4, 26, 1, 0));
-        assertThat(result.getEudicPushedAt()).isEqualTo(LocalDateTime.of(2026, 4, 26, 1, 0));
+        assertThat(result.getVocabularyExtractedAt()).isEqualTo(LocalDateTime.of(2026, 4, 26, 1, 0));
+        assertThat(result.getEudicPushedAt()).isNull();
     }
 
     private LearningArticleRepository learningArticleRepository(

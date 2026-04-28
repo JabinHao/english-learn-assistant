@@ -3,7 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { pushVocabularyItem } from "@/lib/api/learning";
+import { pushVocabularyItem, removeVocabularyItem } from "@/lib/api/learning";
 import type { VocabularyItem } from "@/lib/api/types";
 import { useState } from "react";
 
@@ -16,6 +16,7 @@ export function VocabularyList({
 }) {
   const [localItems, setLocalItems] = useState(items);
   const [pushingId, setPushingId] = useState<number | null>(null);
+  const [removingId, setRemovingId] = useState<number | null>(null);
 
   async function handlePush(itemId: number) {
     setPushingId(itemId);
@@ -26,6 +27,18 @@ export function VocabularyList({
       );
     } finally {
       setPushingId(null);
+    }
+  }
+
+  async function handleRemove(itemId: number) {
+    setRemovingId(itemId);
+    try {
+      const updated = await removeVocabularyItem(learningArticleId, itemId);
+      setLocalItems((current) =>
+        current.map((item) => (item.id === itemId ? updated : item)),
+      );
+    } finally {
+      setRemovingId(null);
     }
   }
 
@@ -72,16 +85,22 @@ export function VocabularyList({
                   </p>
                 )}
               </div>
-              {!item.eudicPushed ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={pushingId === item.id}
-                  onClick={() => handlePush(item.id)}
-                >
-                  {pushingId === item.id ? "Pushing..." : "Add to Eudic"}
-                </Button>
-              ) : null}
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={pushingId === item.id || removingId === item.id}
+                onClick={() =>
+                  item.eudicPushed ? handleRemove(item.id) : handlePush(item.id)
+                }
+              >
+                {pushingId === item.id
+                  ? "Adding..."
+                  : removingId === item.id
+                    ? "Removing..."
+                    : item.eudicPushed
+                      ? "Remove from Eudic"
+                      : "Add to Eudic"}
+              </Button>
             </div>
             <div className="mt-2 space-y-1 text-sm">
               {item.chineseDefinition ? (

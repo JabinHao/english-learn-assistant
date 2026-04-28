@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -97,6 +98,39 @@ class LearningArticleControllerTest {
                 .andExpect(jsonPath("$.eudicPushed").value(true));
     }
 
+    @Test
+    void removeVocabularyItem_shouldReturnUpdatedVocabularyItem() throws Exception {
+        VocabularyItemEntity vocabularyItem = new VocabularyItemEntity();
+        ReflectionTestUtils.setField(vocabularyItem, "id", 5L);
+        vocabularyItem.setWord("reasoning");
+        vocabularyItem.setLemma("reasoning");
+        vocabularyItem.setType("WORD");
+        vocabularyItem.setIpa("/ˈriːzənɪŋ/");
+        vocabularyItem.setChineseDefinition("推理");
+        vocabularyItem.setEudicPushed(false);
+
+        LearningWorkflowService workflowService = new LearningWorkflowService(null, null, null, null, null, null, null, null, java.time.Clock.systemUTC()) {
+            @Override
+            public VocabularyItemEntity removeVocabularyItem(Long learningArticleId, Long vocabularyItemId) {
+                return vocabularyItem;
+            }
+        };
+
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new LearningArticleController(
+                        learningRepository(learningArticle()),
+                        paragraphRepository(List.of()),
+                        vocabularyRepository(List.of()),
+                        workflowService))
+                .setMessageConverters(new MappingJackson2HttpMessageConverter())
+                .build();
+
+        mockMvc.perform(delete("/api/learning-articles/88/vocabulary/5/push"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(5))
+                .andExpect(jsonPath("$.word").value("reasoning"))
+                .andExpect(jsonPath("$.eudicPushed").value(false));
+    }
+
     private LearningArticleRepository learningRepository(LearningArticleEntity article) {
         return (LearningArticleRepository) Proxy.newProxyInstance(
                 LearningArticleRepository.class.getClassLoader(),
@@ -146,7 +180,7 @@ class LearningArticleControllerTest {
         LearningArticleEntity article = new LearningArticleEntity();
         ReflectionTestUtils.setField(article, "id", 88L);
         article.setCandidateArticle(candidateArticle);
-        article.setStatus("EUDIC_PUSHED");
+        article.setStatus("VOCAB_READY");
         article.setTitle("Selected article");
         article.setUrl("https://example.com/article");
         article.setSource("Test Feed");

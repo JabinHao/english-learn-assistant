@@ -14,3 +14,13 @@ export function pushVocabularyItem(
     { method: "POST" },
   );
 }
+
+export function removeVocabularyItem(
+  learningArticleId: number,
+  vocabularyItemId: number,
+): Promise<VocabularyItem> {
+  return apiFetch<VocabularyItem>(
+    `/api/learning-articles/${learningArticleId}/vocabulary/${vocabularyItemId}/push`,
+    { method: "DELETE" },
+  );
+}
