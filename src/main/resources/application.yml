@@ -26,10 +26,18 @@ ailearn:
       - http://localhost:3000
       - http://127.0.0.1:3000
   candidate:
-    cron: ${AILEARN_CANDIDATE_CRON:0 32 0 * * *}
+    cron: ${AILEARN_CANDIDATE_CRON:0 0 8 * * *}
     lookback-hours: ${AILEARN_CANDIDATE_LOOKBACK_HOURS:36}
     max-candidates: ${AILEARN_CANDIDATE_MAX:5}
     min-score: ${AILEARN_CANDIDATE_MIN_SCORE:6.5}
+  llm:
+    timeout-seconds: ${AILEARN_LLM_TIMEOUT_SECONDS:60}
+    max-retries: ${AILEARN_LLM_MAX_RETRIES:2}
+  observability:
+    log-llm-requests: ${AILEARN_LOG_LLM_REQUESTS:true}
+    log-llm-responses: ${AILEARN_LOG_LLM_RESPONSES:true}
+    max-prompt-length: ${AILEARN_LOG_MAX_PROMPT_LENGTH:2000}
+    max-response-length: ${AILEARN_LOG_MAX_RESPONSE_LENGTH:2000}
   rss:
     feeds:
       - name: Hacker News AI

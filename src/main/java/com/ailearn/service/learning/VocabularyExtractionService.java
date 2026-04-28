@@ -1,8 +1,11 @@
 package com.ailearn.service.learning;
 
 import com.ailearn.model.VocabularyCandidate;
+import com.ailearn.observability.LlmTraceLogger;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
@@ -17,11 +20,14 @@ import java.util.List;
 @Service
 public class VocabularyExtractionService {
 
+    private static final Logger log = LoggerFactory.getLogger(VocabularyExtractionService.class);
+
     public interface VocabularyChatClient {
         String chat(String prompt);
     }
 
     private final ObjectMapper objectMapper;
+    private final LlmTraceLogger llmTraceLogger;
     private final VocabularyChatClient vocabularyChatClient;
     private final String promptTemplate;
 
@@ -29,9 +35,22 @@ public class VocabularyExtractionService {
     public VocabularyExtractionService(
             ObjectMapper objectMapper,
             ResourceLoader resourceLoader,
+            LlmTraceLogger llmTraceLogger,
             VocabularyChatClient vocabularyChatClient
     ) {
-        this(objectMapper, vocabularyChatClient, loadPrompt(resourceLoader));
+        this(objectMapper, llmTraceLogger, vocabularyChatClient, loadPrompt(resourceLoader));
+    }
+
+    VocabularyExtractionService(
+            ObjectMapper objectMapper,
+            LlmTraceLogger llmTraceLogger,
+            VocabularyChatClient vocabularyChatClient,
+            String promptTemplate
+    ) {
+        this.objectMapper = objectMapper;
+        this.llmTraceLogger = llmTraceLogger;
+        this.vocabularyChatClient = vocabularyChatClient;
+        this.promptTemplate = promptTemplate;
     }
 
     VocabularyExtractionService(
@@ -39,9 +58,7 @@ public class VocabularyExtractionService {
             VocabularyChatClient vocabularyChatClient,
             String promptTemplate
     ) {
-        this.objectMapper = objectMapper;
-        this.vocabularyChatClient = vocabularyChatClient;
-        this.promptTemplate = promptTemplate;
+        this(objectMapper, new LlmTraceLogger(new com.ailearn.config.AppConfig()), vocabularyChatClient, promptTemplate);
     }
 
     public List<VocabularyCandidate> extract(List<String> paragraphs) {
@@ -49,8 +66,16 @@ public class VocabularyExtractionService {
             return List.of();
         }
 
-        String response = vocabularyChatClient.chat(buildPrompt(paragraphs));
-        return parseResponse(response);
+        String prompt = buildPrompt(paragraphs);
+        llmTraceLogger.logRequest(log, "vocabulary_extraction", prompt);
+        try {
+            String response = vocabularyChatClient.chat(prompt);
+            llmTraceLogger.logResponse(log, "vocabulary_extraction", response);
+            return parseResponse(response);
+        } catch (RuntimeException exception) {
+            llmTraceLogger.logFailure(log, "vocabulary_extraction", exception);
+            throw exception;
+        }
     }
 
     List<VocabularyCandidate> parseResponse(String response) {

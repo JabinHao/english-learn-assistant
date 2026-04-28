@@ -2,6 +2,9 @@ package com.ailearn.service.learning;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ailearn.observability.LlmTraceLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
@@ -17,11 +20,14 @@ import java.util.List;
 @Service
 public class TranslationService {
 
+    private static final Logger log = LoggerFactory.getLogger(TranslationService.class);
+
     public interface TranslationChatClient {
         String chat(String prompt);
     }
 
     private final ObjectMapper objectMapper;
+    private final LlmTraceLogger llmTraceLogger;
     private final TranslationChatClient translationChatClient;
     private final String promptTemplate;
 
@@ -29,9 +35,22 @@ public class TranslationService {
     public TranslationService(
             ObjectMapper objectMapper,
             ResourceLoader resourceLoader,
+            LlmTraceLogger llmTraceLogger,
             TranslationChatClient translationChatClient
     ) {
-        this(objectMapper, translationChatClient, loadPrompt(resourceLoader));
+        this(objectMapper, llmTraceLogger, translationChatClient, loadPrompt(resourceLoader));
+    }
+
+    TranslationService(
+            ObjectMapper objectMapper,
+            LlmTraceLogger llmTraceLogger,
+            TranslationChatClient translationChatClient,
+            String promptTemplate
+    ) {
+        this.objectMapper = objectMapper;
+        this.llmTraceLogger = llmTraceLogger;
+        this.translationChatClient = translationChatClient;
+        this.promptTemplate = promptTemplate;
     }
 
     TranslationService(
@@ -39,9 +58,7 @@ public class TranslationService {
             TranslationChatClient translationChatClient,
             String promptTemplate
     ) {
-        this.objectMapper = objectMapper;
-        this.translationChatClient = translationChatClient;
-        this.promptTemplate = promptTemplate;
+        this(objectMapper, new LlmTraceLogger(new com.ailearn.config.AppConfig()), translationChatClient, promptTemplate);
     }
 
     public List<String> translate(List<String> paragraphs) {
@@ -49,8 +66,16 @@ public class TranslationService {
             return List.of();
         }
 
-        String response = translationChatClient.chat(buildPrompt(paragraphs));
-        return parseResponse(response);
+        String prompt = buildPrompt(paragraphs);
+        llmTraceLogger.logRequest(log, "paragraph_translation", prompt);
+        try {
+            String response = translationChatClient.chat(prompt);
+            llmTraceLogger.logResponse(log, "paragraph_translation", response);
+            return parseResponse(response);
+        } catch (RuntimeException exception) {
+            llmTraceLogger.logFailure(log, "paragraph_translation", exception);
+            throw exception;
+        }
     }
 
     List<String> parseResponse(String response) {

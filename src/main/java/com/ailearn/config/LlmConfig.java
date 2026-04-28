@@ -5,7 +5,6 @@ import com.ailearn.service.learning.TranslationService;
 import com.ailearn.service.learning.VocabularyExtractionService;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -16,18 +15,21 @@ public class LlmConfig {
 
     @Bean
     ChatLanguageModel chatLanguageModel(
-            @Value("${langchain4j.open-ai.chat-model.api-key}") String apiKey,
-            @Value("${langchain4j.open-ai.chat-model.model-name}") String modelName,
-            @Value("${langchain4j.open-ai.chat-model.temperature}") Double temperature,
-            @Value("${langchain4j.open-ai.chat-model.base-url}") String baseUrl
+            AppConfig appConfig,
+            org.springframework.core.env.Environment environment
     ) {
+        String apiKey = environment.getRequiredProperty("langchain4j.open-ai.chat-model.api-key");
+        String modelName = environment.getRequiredProperty("langchain4j.open-ai.chat-model.model-name");
+        Double temperature = environment.getRequiredProperty("langchain4j.open-ai.chat-model.temperature", Double.class);
+        String baseUrl = environment.getRequiredProperty("langchain4j.open-ai.chat-model.base-url");
+
         return OpenAiChatModel.builder()
                 .apiKey(apiKey)
                 .baseUrl(baseUrl)
                 .modelName(modelName)
                 .temperature(temperature)
-                .timeout(Duration.ofSeconds(30))
-                .maxRetries(1)
+                .timeout(Duration.ofSeconds(appConfig.getLlm().getTimeoutSeconds()))
+                .maxRetries(appConfig.getLlm().getMaxRetries())
                 .build();
     }
 

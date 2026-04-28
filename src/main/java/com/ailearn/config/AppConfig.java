@@ -15,6 +15,8 @@ public class AppConfig {
     private Candidate candidate = new Candidate();
     private Cors cors = new Cors();
     private Eudic eudic = new Eudic();
+    private Llm llm = new Llm();
+    private Observability observability = new Observability();
     private Rss rss = new Rss();
     private Filters filters = new Filters();
 
@@ -48,6 +50,22 @@ public class AppConfig {
 
     public void setRss(Rss rss) {
         this.rss = rss;
+    }
+
+    public Observability getObservability() {
+        return observability;
+    }
+
+    public void setObservability(Observability observability) {
+        this.observability = observability;
+    }
+
+    public Llm getLlm() {
+        return llm;
+    }
+
+    public void setLlm(Llm llm) {
+        this.llm = llm;
     }
 
     public Filters getFilters() {
@@ -153,6 +171,66 @@ public class AppConfig {
 
         public void setLanguage(String language) {
             this.language = language;
+        }
+    }
+
+    public static class Llm {
+        private int timeoutSeconds = 60;
+        private int maxRetries = 2;
+
+        public int getTimeoutSeconds() {
+            return timeoutSeconds;
+        }
+
+        public void setTimeoutSeconds(int timeoutSeconds) {
+            this.timeoutSeconds = timeoutSeconds;
+        }
+
+        public int getMaxRetries() {
+            return maxRetries;
+        }
+
+        public void setMaxRetries(int maxRetries) {
+            this.maxRetries = maxRetries;
+        }
+    }
+
+    public static class Observability {
+        private boolean logLlmRequests = true;
+        private boolean logLlmResponses = true;
+        private int maxPromptLength = 2000;
+        private int maxResponseLength = 2000;
+
+        public boolean isLogLlmRequests() {
+            return logLlmRequests;
+        }
+
+        public void setLogLlmRequests(boolean logLlmRequests) {
+            this.logLlmRequests = logLlmRequests;
+        }
+
+        public boolean isLogLlmResponses() {
+            return logLlmResponses;
+        }
+
+        public void setLogLlmResponses(boolean logLlmResponses) {
+            this.logLlmResponses = logLlmResponses;
+        }
+
+        public int getMaxPromptLength() {
+            return maxPromptLength;
+        }
+
+        public void setMaxPromptLength(int maxPromptLength) {
+            this.maxPromptLength = maxPromptLength;
+        }
+
+        public int getMaxResponseLength() {
+            return maxResponseLength;
+        }
+
+        public void setMaxResponseLength(int maxResponseLength) {
+            this.maxResponseLength = maxResponseLength;
         }
     }
 

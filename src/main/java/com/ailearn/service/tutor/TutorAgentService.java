@@ -1,9 +1,12 @@
 package com.ailearn.service.tutor;
 
+import com.ailearn.observability.LlmTraceLogger;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
@@ -17,18 +20,31 @@ import java.util.List;
 @Service
 public class TutorAgentService {
 
+    private static final Logger log = LoggerFactory.getLogger(TutorAgentService.class);
+
     private final ChatLanguageModel chatLanguageModel;
     private final String systemPrompt;
     private final ArticleTutorContextService articleTutorContextService;
+    private final LlmTraceLogger llmTraceLogger;
+
+    public TutorAgentService(
+            ChatLanguageModel chatLanguageModel,
+            ResourceLoader resourceLoader,
+            ArticleTutorContextService articleTutorContextService,
+            LlmTraceLogger llmTraceLogger
+    ) {
+        this.chatLanguageModel = chatLanguageModel;
+        this.systemPrompt = loadPrompt(resourceLoader);
+        this.articleTutorContextService = articleTutorContextService;
+        this.llmTraceLogger = llmTraceLogger;
+    }
 
     public TutorAgentService(
             ChatLanguageModel chatLanguageModel,
             ResourceLoader resourceLoader,
             ArticleTutorContextService articleTutorContextService
     ) {
-        this.chatLanguageModel = chatLanguageModel;
-        this.systemPrompt = loadPrompt(resourceLoader);
-        this.articleTutorContextService = articleTutorContextService;
+        this(chatLanguageModel, resourceLoader, articleTutorContextService, new LlmTraceLogger(new com.ailearn.config.AppConfig()));
     }
 
     public String reply(Long learningArticleId, List<HistoricalChatMessage> history, String userMessage) {
@@ -46,7 +62,15 @@ public class TutorAgentService {
         }
 
         messages.add(UserMessage.from(userMessage));
-        return chatLanguageModel.chat(messages).aiMessage().text();
+        llmTraceLogger.logRequest(log, "tutor_chat", "context=" + context + "\nuser=" + userMessage);
+        try {
+            String reply = chatLanguageModel.chat(messages).aiMessage().text();
+            llmTraceLogger.logResponse(log, "tutor_chat", reply);
+            return reply;
+        } catch (RuntimeException exception) {
+            llmTraceLogger.logFailure(log, "tutor_chat", exception);
+            throw exception;
+        }
     }
 
     private static String loadPrompt(ResourceLoader resourceLoader) {

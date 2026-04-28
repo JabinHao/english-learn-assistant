@@ -3,8 +3,11 @@ package com.ailearn.service.candidate;
 import com.ailearn.config.AppConfig;
 import com.ailearn.model.FeedArticle;
 import com.ailearn.model.RankedCandidate;
+import com.ailearn.observability.LlmTraceLogger;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
@@ -22,12 +25,15 @@ import java.util.Map;
 @Service
 public class CandidateRerankService {
 
+    private static final Logger log = LoggerFactory.getLogger(CandidateRerankService.class);
+
     public interface RerankChatClient {
         String chat(String prompt);
     }
 
     private final AppConfig appConfig;
     private final ObjectMapper objectMapper;
+    private final LlmTraceLogger llmTraceLogger;
     private final RerankChatClient rerankChatClient;
     private final String promptTemplate;
 
@@ -36,9 +42,24 @@ public class CandidateRerankService {
             AppConfig appConfig,
             ObjectMapper objectMapper,
             ResourceLoader resourceLoader,
+            LlmTraceLogger llmTraceLogger,
             RerankChatClient rerankChatClient
     ) {
-        this(appConfig, objectMapper, rerankChatClient, loadPrompt(resourceLoader));
+        this(appConfig, objectMapper, llmTraceLogger, rerankChatClient, loadPrompt(resourceLoader));
+    }
+
+    CandidateRerankService(
+            AppConfig appConfig,
+            ObjectMapper objectMapper,
+            LlmTraceLogger llmTraceLogger,
+            RerankChatClient rerankChatClient,
+            String promptTemplate
+    ) {
+        this.appConfig = appConfig;
+        this.objectMapper = objectMapper;
+        this.llmTraceLogger = llmTraceLogger;
+        this.rerankChatClient = rerankChatClient;
+        this.promptTemplate = promptTemplate;
     }
 
     CandidateRerankService(
@@ -47,10 +68,16 @@ public class CandidateRerankService {
             RerankChatClient rerankChatClient,
             String promptTemplate
     ) {
-        this.appConfig = appConfig;
-        this.objectMapper = objectMapper;
-        this.rerankChatClient = rerankChatClient;
-        this.promptTemplate = promptTemplate;
+        this(appConfig, objectMapper, new LlmTraceLogger(new AppConfig()), rerankChatClient, promptTemplate);
+    }
+
+    public CandidateRerankService(
+            AppConfig appConfig,
+            ObjectMapper objectMapper,
+            ResourceLoader resourceLoader,
+            RerankChatClient rerankChatClient
+    ) {
+        this(appConfig, objectMapper, new LlmTraceLogger(new AppConfig()), rerankChatClient, loadPrompt(resourceLoader));
     }
 
     public List<RankedCandidate> rerank(List<FeedArticle> articles) {
@@ -63,16 +90,24 @@ public class CandidateRerankService {
             articleByUrl.put(article.url(), article);
         }
 
-        String response = rerankChatClient.chat(buildPrompt(articles));
-        List<ScoredUrl> scoredUrls = parseResponse(response);
+        String prompt = buildPrompt(articles);
+        llmTraceLogger.logRequest(log, "candidate_rerank", prompt);
+        try {
+            String response = rerankChatClient.chat(prompt);
+            llmTraceLogger.logResponse(log, "candidate_rerank", response);
+            List<ScoredUrl> scoredUrls = parseResponse(response);
 
-        return scoredUrls.stream()
-                .filter(candidate -> articleByUrl.containsKey(candidate.url()))
-                .filter(candidate -> candidate.score() >= appConfig.getCandidate().getMinScore())
-                .sorted(Comparator.comparingDouble(ScoredUrl::score).reversed())
-                .limit(appConfig.getCandidate().getMaxCandidates())
-                .map(candidate -> toRankedCandidate(articleByUrl.get(candidate.url()), candidate))
-                .toList();
+            return scoredUrls.stream()
+                    .filter(candidate -> articleByUrl.containsKey(candidate.url()))
+                    .filter(candidate -> candidate.score() >= appConfig.getCandidate().getMinScore())
+                    .sorted(Comparator.comparingDouble(ScoredUrl::score).reversed())
+                    .limit(appConfig.getCandidate().getMaxCandidates())
+                    .map(candidate -> toRankedCandidate(articleByUrl.get(candidate.url()), candidate))
+                    .toList();
+        } catch (RuntimeException exception) {
+            llmTraceLogger.logFailure(log, "candidate_rerank", exception);
+            throw exception;
+        }
     }
 
     List<ScoredUrl> parseResponse(String response) {

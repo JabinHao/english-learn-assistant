@@ -6,12 +6,15 @@ import com.ailearn.entity.CandidateArticleEntity;
 import com.ailearn.repository.CandidateArticleRepository;
 import com.ailearn.service.candidate.CandidateGenerationService;
 import com.ailearn.service.learning.CandidateSelectionService;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.net.http.HttpTimeoutException;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.List;
@@ -47,8 +50,19 @@ public class CandidateController {
 
     @PostMapping("/generate")
     public List<CandidateArticleResponse> generateTodayCandidates() {
-        candidateGenerationService.generateToday();
-        return getTodayCandidates();
+        try {
+            candidateGenerationService.generateToday();
+            return getTodayCandidates();
+        } catch (RuntimeException exception) {
+            if (causedBy(exception, HttpTimeoutException.class)) {
+                throw new ResponseStatusException(
+                        HttpStatus.GATEWAY_TIMEOUT,
+                        "Candidate generation timed out while calling the LLM provider",
+                        exception
+                );
+            }
+            throw exception;
+        }
     }
 
     @PostMapping("/{candidateId}/select")
@@ -68,5 +82,16 @@ public class CandidateController {
                 entity.getLlmReason(),
                 entity.isSelected()
         );
+    }
+
+    private boolean causedBy(Throwable throwable, Class<? extends Throwable> type) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (type.isInstance(current)) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 }
