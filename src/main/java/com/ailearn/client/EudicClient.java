@@ -2,8 +2,11 @@ package com.ailearn.client;
 
 import com.ailearn.config.AppConfig;
 import com.ailearn.entity.VocabularyItemEntity;
+import com.ailearn.service.learning.LearningWorkflowService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -14,8 +17,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 @Component
 public class EudicClient {
@@ -23,6 +26,8 @@ public class EudicClient {
     private final AppConfig appConfig;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
+    private static final Logger log = LoggerFactory.getLogger(EudicClient.class);
+
 
     @Autowired
     public EudicClient(AppConfig appConfig) {
@@ -82,7 +87,8 @@ public class EudicClient {
         try {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             return response.statusCode() >= 200 && response.statusCode() < 300;
-        } catch (IOException | InterruptedException exception) {
+        } catch (Exception exception) {
+            log.error("Failed to push vocabulary note to Eudic for word '{}'", item.getWord(), exception);
             throw new IllegalStateException("Failed to push vocabulary note to Eudic", exception);
         }
     }
@@ -157,12 +163,11 @@ public class EudicClient {
     }
 
     private String buildNote(VocabularyItemEntity item) {
-        List<String> parts = List.of(
-                item.getIpa() == null || item.getIpa().isBlank() ? null : "IPA: " + item.getIpa(),
-                item.getEnglishDefinition() == null || item.getEnglishDefinition().isBlank() ? null : "EN: " + item.getEnglishDefinition(),
-                item.getChineseDefinition() == null || item.getChineseDefinition().isBlank() ? null : "ZH: " + item.getChineseDefinition()
-        );
-        return parts.stream()
+        return Stream.of(
+                        item.getIpa() == null || item.getIpa().isBlank() ? null : "IPA: " + item.getIpa(),
+                        item.getEnglishDefinition() == null || item.getEnglishDefinition().isBlank() ? null : "EN: " + item.getEnglishDefinition(),
+                        item.getChineseDefinition() == null || item.getChineseDefinition().isBlank() ? null : "ZH: " + item.getChineseDefinition()
+                )
                 .filter(value -> value != null && !value.isBlank())
                 .reduce((left, right) -> left + "\n" + right)
                 .orElse("");

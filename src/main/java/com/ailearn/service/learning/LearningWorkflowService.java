@@ -119,10 +119,17 @@ public class LearningWorkflowService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Eudic is not configured");
         }
 
-        String studyListId = eudicClient.ensureStudyList();
-        boolean pushed = eudicClient.pushWord(studyListId, item);
-        if (pushed) {
-            eudicClient.pushNote(studyListId, item);
+        boolean pushed;
+        try {
+            String studyListId = eudicClient.ensureStudyList();
+            pushed = eudicClient.pushWord(studyListId, item);
+            if (pushed) {
+                eudicClient.pushNote(studyListId, item);
+            }
+        } catch (Exception exception) {
+            log.error("learning.workflow.eudic_push_failed learningArticleId={} vocabularyItemId={} word={} error={}",
+                    learningArticleId, vocabularyItemId, item.getWord(), exception.getMessage(), exception);
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to sync vocabulary item to Eudic", exception);
         }
         if (!pushed) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to push vocabulary item to Eudic");
@@ -157,8 +164,13 @@ public class LearningWorkflowService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Eudic is not configured");
         }
 
-        String studyListId = eudicClient.ensureStudyList();
-        boolean removed = eudicClient.deleteWord(studyListId, item);
+        boolean removed;
+        try {
+            String studyListId = eudicClient.ensureStudyList();
+            removed = eudicClient.deleteWord(studyListId, item);
+        } catch (IllegalStateException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to sync vocabulary item to Eudic", exception);
+        }
         if (!removed) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Failed to remove vocabulary item from Eudic");
         }

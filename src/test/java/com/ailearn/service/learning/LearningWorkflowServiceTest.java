@@ -11,6 +11,7 @@ import com.ailearn.repository.LearningArticleRepository;
 import com.ailearn.repository.VocabularyItemRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.lang.reflect.Proxy;
 import java.time.Clock;
@@ -23,6 +24,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class LearningWorkflowServiceTest {
 
@@ -71,6 +73,39 @@ class LearningWorkflowServiceTest {
         assertThat(result.getTranslatedAt()).isEqualTo(LocalDateTime.of(2026, 4, 26, 1, 0));
         assertThat(result.getVocabularyExtractedAt()).isEqualTo(LocalDateTime.of(2026, 4, 26, 1, 0));
         assertThat(result.getEudicPushedAt()).isNull();
+    }
+
+    @Test
+    void pushVocabularyItem_shouldMapEudicClientFailureToBadGateway() {
+        Clock clock = Clock.fixed(Instant.parse("2026-04-26T01:00:00Z"), ZoneOffset.UTC);
+        LearningArticleEntity article = learningArticle(88L, 7L);
+        VocabularyItemEntity vocabularyItem = vocabularyItem(article, 13L);
+        LearningWorkflowService service = new LearningWorkflowService(
+                learningArticleRepository(article, new AtomicReference<>()),
+                null,
+                null,
+                null,
+                null,
+                null,
+                vocabularyRepository(vocabularyItem),
+                new EudicClient(null) {
+                    @Override
+                    public boolean isConfigured() {
+                        return true;
+                    }
+
+                    @Override
+                    public String ensureStudyList() {
+                        throw new IllegalStateException("Eudic category response is invalid");
+                    }
+                },
+                clock
+        );
+
+        assertThatThrownBy(() -> service.pushVocabularyItem(88L, 13L))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(exception -> assertThat(((ResponseStatusException) exception).getStatusCode().value()).isEqualTo(502))
+                .hasMessageContaining("Failed to sync vocabulary item to Eudic");
     }
 
     private LearningArticleRepository learningArticleRepository(
@@ -135,6 +170,22 @@ class LearningWorkflowServiceTest {
         );
     }
 
+    private VocabularyItemRepository vocabularyRepository(VocabularyItemEntity item) {
+        return (VocabularyItemRepository) Proxy.newProxyInstance(
+                VocabularyItemRepository.class.getClassLoader(),
+                new Class[]{VocabularyItemRepository.class},
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "findById" -> Optional.of(item);
+                    case "findByLearningArticleIdOrderByCreatedAtAsc" -> List.of(item);
+                    case "save" -> args[0];
+                    case "hashCode" -> System.identityHashCode(proxy);
+                    case "equals" -> proxy == args[0];
+                    case "toString" -> "VocabularyItemRepositoryProxy";
+                    default -> throw new UnsupportedOperationException(method.getName());
+                }
+        );
+    }
+
     private LearningArticleEntity learningArticle(Long learningArticleId, Long candidateArticleId) {
         CandidateArticleEntity candidateArticle = new CandidateArticleEntity();
         ReflectionTestUtils.setField(candidateArticle, "id", candidateArticleId);
@@ -147,5 +198,15 @@ class LearningWorkflowServiceTest {
         learningArticle.setUrl("https://example.com/article");
         learningArticle.setSource("Test Feed");
         return learningArticle;
+    }
+
+    private VocabularyItemEntity vocabularyItem(LearningArticleEntity article, Long vocabularyItemId) {
+        VocabularyItemEntity item = new VocabularyItemEntity();
+        ReflectionTestUtils.setField(item, "id", vocabularyItemId);
+        item.setLearningArticle(article);
+        item.setWord("reasoning");
+        item.setType("WORD");
+        item.setEudicPushed(false);
+        return item;
     }
 }
