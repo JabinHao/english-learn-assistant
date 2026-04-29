@@ -85,9 +85,9 @@ class CandidatePipelineIntegrationTest {
                 @Override
                 public List<FeedArticle> fetchAll() {
                     return List.of(
-                            article("OpenAI launches reasoning update", "https://example.com/a", "OpenAI released a new reasoning-focused model.", -2),
-                            article("Inference optimization guide", "https://example.com/b", "A practical guide to lower inference cost.", -3),
-                            article("Company hiring update", "https://example.com/c", "General business update with no AI keywords.", -4)
+                            article("OpenAI launches reasoning update", "https://example.com/a", "OpenAI released a new reasoning-focused model with practical details about model behavior, evaluation, deployment tradeoffs, and AI product learning.", -2),
+                            article("Inference optimization guide", "https://example.com/b", "A practical guide to lower inference cost for AI systems, including batching, caching, latency targets, model routing, and production monitoring.", -3),
+                            article("Company hiring update", "https://example.com/c", "General business update with no AI keywords and enough detail to prove that reranking, not text-length filtering, removes this item from results.", -4)
                     );
                 }
             };
@@ -101,7 +101,7 @@ class CandidatePipelineIntegrationTest {
                 public List<RankedCandidate> rerank(List<FeedArticle> articles) {
                     return articles.stream()
                             .filter(article -> !article.url().equals("https://example.com/c"))
-                            .sorted(Comparator.comparing(FeedArticle::title))
+                            .sorted(Comparator.comparing((FeedArticle article) -> article.url().endsWith("/a") ? 9.2d : 8.4d).reversed())
                             .map(article -> new RankedCandidate(
                                     article.title(),
                                     article.url(),

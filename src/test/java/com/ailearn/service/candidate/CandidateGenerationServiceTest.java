@@ -227,7 +227,7 @@ class CandidateGenerationServiceTest {
     }
 
     private CandidateCoarseFilter coarseFilter(List<FeedArticle> filteredArticles) {
-        return new CandidateCoarseFilter(new AppConfig()) {
+        return new CandidateCoarseFilter(new AppConfig(), Clock.systemUTC()) {
             @Override
             public List<FeedArticle> filter(List<FeedArticle> articles) {
                 return filteredArticles;

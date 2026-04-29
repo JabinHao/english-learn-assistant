@@ -121,7 +121,7 @@ class TutorChatIntegrationTest {
 
         @Bean
         @Primary
-        ChatLanguageModel chatLanguageModel() {
+        ChatLanguageModel testChatLanguageModel() {
             return new ChatLanguageModel() {
                 @Override
                 public ChatResponse doChat(dev.langchain4j.model.chat.request.ChatRequest chatRequest) {
