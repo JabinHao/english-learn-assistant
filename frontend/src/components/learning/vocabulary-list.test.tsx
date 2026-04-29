@@ -1,7 +1,13 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { VocabularyList } from "./vocabulary-list";
 import type { VocabularyItem } from "@/lib/api/types";
+import { pushVocabularyItem } from "@/lib/api/learning";
+
+vi.mock("@/lib/api/learning", () => ({
+  pushVocabularyItem: vi.fn(),
+  removeVocabularyItem: vi.fn(),
+}));
 
 const items: VocabularyItem[] = [
   {
@@ -29,6 +35,10 @@ const items: VocabularyItem[] = [
 ];
 
 describe("VocabularyList", () => {
+  afterEach(() => {
+    vi.mocked(pushVocabularyItem).mockReset();
+  });
+
   it("renders all vocabulary items", () => {
     render(<VocabularyList learningArticleId={88} items={items} />);
 
@@ -69,5 +79,20 @@ describe("VocabularyList", () => {
     expect(
       screen.getByText("No vocabulary items have been extracted yet."),
     ).toBeInTheDocument();
+  });
+
+  it("shows an inline error when Eudic sync fails", async () => {
+    vi.mocked(pushVocabularyItem).mockRejectedValue(
+      new Error("Failed to sync vocabulary item to Eudic"),
+    );
+
+    render(<VocabularyList learningArticleId={88} items={items} />);
+    fireEvent.click(screen.getByText("Add to Eudic"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Failed to sync vocabulary item to Eudic"),
+      ).toBeInTheDocument();
+    });
   });
 });

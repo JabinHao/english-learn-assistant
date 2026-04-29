@@ -17,14 +17,18 @@ export function VocabularyList({
   const [localItems, setLocalItems] = useState(items);
   const [pushingId, setPushingId] = useState<number | null>(null);
   const [removingId, setRemovingId] = useState<number | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function handlePush(itemId: number) {
     setPushingId(itemId);
+    setErrorMessage(null);
     try {
       const updated = await pushVocabularyItem(learningArticleId, itemId);
       setLocalItems((current) =>
         current.map((item) => (item.id === itemId ? updated : item)),
       );
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Failed to sync vocabulary item to Eudic");
     } finally {
       setPushingId(null);
     }
@@ -32,11 +36,14 @@ export function VocabularyList({
 
   async function handleRemove(itemId: number) {
     setRemovingId(itemId);
+    setErrorMessage(null);
     try {
       const updated = await removeVocabularyItem(learningArticleId, itemId);
       setLocalItems((current) =>
         current.map((item) => (item.id === itemId ? updated : item)),
       );
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Failed to sync vocabulary item to Eudic");
     } finally {
       setRemovingId(null);
     }
@@ -61,6 +68,11 @@ export function VocabularyList({
         <CardTitle className="text-lg">Vocabulary</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        {errorMessage ? (
+          <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {errorMessage}
+          </p>
+        ) : null}
         {localItems.map((item) => (
           <div
             key={item.id}
