@@ -21,6 +21,7 @@ import java.util.List;
 public class TranslationService {
 
     private static final Logger log = LoggerFactory.getLogger(TranslationService.class);
+    private static final int MAX_BATCH_PARAGRAPH_CHARS = 4_000;
 
     public interface TranslationChatClient {
         String chat(String prompt);
@@ -66,16 +67,50 @@ public class TranslationService {
             return List.of();
         }
 
+        List<String> translations = new ArrayList<>();
+        List<List<String>> batches = batchParagraphs(paragraphs);
+        log.info("translation.batch.start paragraphCount={} batchCount={}", paragraphs.size(), batches.size());
+        for (int batchIndex = 0; batchIndex < batches.size(); batchIndex++) {
+            List<String> batch = batches.get(batchIndex);
+            translations.addAll(translateBatch(batch, batchIndex + 1, batches.size()));
+        }
+        return translations;
+    }
+
+    private List<String> translateBatch(List<String> paragraphs, int batchNumber, int batchCount) {
         String prompt = buildPrompt(paragraphs);
-        llmTraceLogger.logRequest(log, "paragraph_translation", prompt);
+        String operation = "paragraph_translation_batch_" + batchNumber + "_of_" + batchCount;
+        llmTraceLogger.logRequest(log, operation, prompt);
         try {
             String response = translationChatClient.chat(prompt);
-            llmTraceLogger.logResponse(log, "paragraph_translation", response);
+            llmTraceLogger.logResponse(log, operation, response);
             return parseResponse(response);
         } catch (RuntimeException exception) {
-            llmTraceLogger.logFailure(log, "paragraph_translation", exception);
+            llmTraceLogger.logFailure(log, operation, exception);
             throw exception;
         }
+    }
+
+    private List<List<String>> batchParagraphs(List<String> paragraphs) {
+        List<List<String>> batches = new ArrayList<>();
+        List<String> currentBatch = new ArrayList<>();
+        int currentChars = 0;
+
+        for (String paragraph : paragraphs) {
+            int paragraphChars = paragraph.length();
+            if (!currentBatch.isEmpty() && currentChars + paragraphChars > MAX_BATCH_PARAGRAPH_CHARS) {
+                batches.add(List.copyOf(currentBatch));
+                currentBatch.clear();
+                currentChars = 0;
+            }
+            currentBatch.add(paragraph);
+            currentChars += paragraphChars;
+        }
+
+        if (!currentBatch.isEmpty()) {
+            batches.add(List.copyOf(currentBatch));
+        }
+        return batches;
     }
 
     List<String> parseResponse(String response) {
