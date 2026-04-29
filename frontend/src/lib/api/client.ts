@@ -25,9 +25,19 @@ export async function apiFetch<T>(
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new ApiError(res.status, body || res.statusText);
+    throw new ApiError(res.status, extractErrorMessage(body) || res.statusText);
   }
 
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
+}
+
+function extractErrorMessage(body: string): string {
+  if (!body) return "";
+  try {
+    const parsed = JSON.parse(body) as { message?: string; error?: string };
+    return parsed.message || parsed.error || body;
+  } catch {
+    return body;
+  }
 }
