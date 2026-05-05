@@ -46,6 +46,7 @@ class CandidateSelectionServiceTest {
         assertThat(clearedBatchId.get()).isEqualTo(22L);
         assertThat(savedCandidate.get().isSelected()).isTrue();
         assertThat(savedLearningArticle.get().getStatus()).isEqualTo("SELECTED");
+        assertThat(savedLearningArticle.get().getSummary()).isEqualTo("一篇有用的 AI 中文摘要");
         assertThat(savedLearningArticle.get().getSelectedAt()).isEqualTo(LocalDateTime.of(2026, 4, 26, 0, 0));
         assertThat(response.learningArticleId()).isEqualTo(101L);
         assertThat(response.candidateArticleId()).isEqualTo(7L);
@@ -131,6 +132,7 @@ class CandidateSelectionServiceTest {
         candidate.setSource("Test Feed");
         candidate.setPublishedAt(LocalDateTime.of(2026, 4, 26, 8, 30));
         candidate.setSummary("A useful AI article");
+        candidate.setChineseSummary("一篇有用的 AI 中文摘要");
         return candidate;
     }
 

@@ -125,10 +125,12 @@ public class CandidateGenerationService {
             CandidateArticleEntity entity = new CandidateArticleEntity();
             entity.setBatch(batch);
             entity.setTitle(rankedCandidate.title());
+            entity.setChineseTitle(rankedCandidate.chineseTitle());
             entity.setUrl(rankedCandidate.url());
             entity.setSource(rankedCandidate.source());
             entity.setPublishedAt(rankedCandidate.publishedAt());
             entity.setSummary(rankedCandidate.summary());
+            entity.setChineseSummary(rankedCandidate.chineseSummary());
             entity.setCoarseFilterReason("passed coarse filter");
             entity.setLlmScore(rankedCandidate.score());
             entity.setLlmReason(rankedCandidate.reason());

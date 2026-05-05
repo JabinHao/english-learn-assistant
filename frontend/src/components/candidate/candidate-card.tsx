@@ -11,6 +11,10 @@ import type { CandidateArticle } from "@/lib/api/types";
 import { SelectButton } from "./select-button";
 
 export function CandidateCard({ candidate }: { candidate: CandidateArticle }) {
+  const displayTitle = candidate.chineseTitle || candidate.title;
+  const displaySummary = candidate.chineseSummary || candidate.summary;
+  const showEnglishTitle = candidate.chineseTitle && candidate.chineseTitle !== candidate.title;
+
   return (
     <Card className="border border-foreground/10 bg-card/90 backdrop-blur-sm">
       <CardHeader>
@@ -23,9 +27,14 @@ export function CandidateCard({ candidate }: { candidate: CandidateArticle }) {
                 rel="noopener noreferrer"
                 className="hover:underline"
               >
-                {candidate.title}
+                {displayTitle}
               </a>
             </CardTitle>
+            {showEnglishTitle ? (
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                {candidate.title}
+              </p>
+            ) : null}
             <CardDescription className="flex items-center gap-2 text-xs">
               <Badge variant="secondary">{candidate.source}</Badge>
               <span>
@@ -41,7 +50,7 @@ export function CandidateCard({ candidate }: { candidate: CandidateArticle }) {
         </div>
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
-        <p>{candidate.summary}</p>
+        <p>{displaySummary}</p>
         <p className="text-muted-foreground italic">
           {candidate.recommendationReason}
         </p>

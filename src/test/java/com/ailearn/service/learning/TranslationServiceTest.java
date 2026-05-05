@@ -3,6 +3,7 @@ package com.ailearn.service.learning;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
+import java.net.http.HttpTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -64,6 +65,53 @@ class TranslationServiceTest {
                 .containsExactly("第1批", "第2批", "第3批");
         assertThat(calls.get()).isEqualTo(3);
         assertThat(prompts).allMatch(prompt -> prompt.length() < 5_000);
+    }
+
+    @Test
+    void translate_shouldRetryTimeoutsAndReturnSuccessfulResponse() {
+        AtomicInteger calls = new AtomicInteger();
+        TranslationService service = new TranslationService(
+                new ObjectMapper(),
+                new com.ailearn.observability.LlmTraceLogger(new com.ailearn.config.AppConfig()),
+                prompt -> {
+                    if (calls.incrementAndGet() == 1) {
+                        throw new RuntimeException(new HttpTimeoutException("translation timed out"));
+                    }
+                    return """
+                            {
+                              "translations": [
+                                {"index": 1, "chineseText": "重试后成功"}
+                              ]
+                            }
+                            """;
+                },
+                "Prompt {{paragraphs}}",
+                2
+        );
+
+        assertThat(service.translate(List.of("Paragraph one")))
+                .containsExactly("重试后成功");
+        assertThat(calls.get()).isEqualTo(2);
+    }
+
+    @Test
+    void translate_shouldNotRetryNonTimeoutFailures() {
+        AtomicInteger calls = new AtomicInteger();
+        TranslationService service = new TranslationService(
+                new ObjectMapper(),
+                new com.ailearn.observability.LlmTraceLogger(new com.ailearn.config.AppConfig()),
+                prompt -> {
+                    calls.incrementAndGet();
+                    throw new IllegalStateException("bad request");
+                },
+                "Prompt {{paragraphs}}",
+                2
+        );
+
+        assertThatThrownBy(() -> service.translate(List.of("Paragraph one")))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("bad request");
+        assertThat(calls.get()).isEqualTo(1);
     }
 
     private String longParagraph(String suffix) {

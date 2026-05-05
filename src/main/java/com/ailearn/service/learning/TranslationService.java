@@ -1,5 +1,6 @@
 package com.ailearn.service.learning;
 
+import com.ailearn.config.AppConfig;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ailearn.observability.LlmTraceLogger;
@@ -12,10 +13,13 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.SocketTimeoutException;
+import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 
 @Service
 public class TranslationService {
@@ -31,27 +35,31 @@ public class TranslationService {
     private final LlmTraceLogger llmTraceLogger;
     private final TranslationChatClient translationChatClient;
     private final String promptTemplate;
+    private final int maxTimeoutRetries;
 
     @Autowired
     public TranslationService(
             ObjectMapper objectMapper,
             ResourceLoader resourceLoader,
             LlmTraceLogger llmTraceLogger,
+            AppConfig appConfig,
             TranslationChatClient translationChatClient
     ) {
-        this(objectMapper, llmTraceLogger, translationChatClient, loadPrompt(resourceLoader));
+        this(objectMapper, llmTraceLogger, translationChatClient, loadPrompt(resourceLoader), appConfig.getLlm().getMaxRetries());
     }
 
     TranslationService(
             ObjectMapper objectMapper,
             LlmTraceLogger llmTraceLogger,
             TranslationChatClient translationChatClient,
-            String promptTemplate
+            String promptTemplate,
+            int maxTimeoutRetries
     ) {
         this.objectMapper = objectMapper;
         this.llmTraceLogger = llmTraceLogger;
         this.translationChatClient = translationChatClient;
         this.promptTemplate = promptTemplate;
+        this.maxTimeoutRetries = Math.max(0, maxTimeoutRetries);
     }
 
     TranslationService(
@@ -59,7 +67,7 @@ public class TranslationService {
             TranslationChatClient translationChatClient,
             String promptTemplate
     ) {
-        this(objectMapper, new LlmTraceLogger(new com.ailearn.config.AppConfig()), translationChatClient, promptTemplate);
+        this(objectMapper, new LlmTraceLogger(new AppConfig()), translationChatClient, promptTemplate, new AppConfig().getLlm().getMaxRetries());
     }
 
     public List<String> translate(List<String> paragraphs) {
@@ -82,13 +90,49 @@ public class TranslationService {
         String operation = "paragraph_translation_batch_" + batchNumber + "_of_" + batchCount;
         llmTraceLogger.logRequest(log, operation, prompt);
         try {
-            String response = translationChatClient.chat(prompt);
+            String response = chatWithTimeoutRetry(prompt, operation);
             llmTraceLogger.logResponse(log, operation, response);
             return parseResponse(response);
         } catch (RuntimeException exception) {
             llmTraceLogger.logFailure(log, operation, exception);
             throw exception;
         }
+    }
+
+    private String chatWithTimeoutRetry(String prompt, String operation) {
+        RuntimeException lastException = null;
+        int maxAttempts = maxTimeoutRetries + 1;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                return translationChatClient.chat(prompt);
+            } catch (RuntimeException exception) {
+                if (!isTimeout(exception) || attempt == maxAttempts) {
+                    throw exception;
+                }
+                lastException = exception;
+                log.warn(
+                        "translation.batch.timeout_retry operation={} attempt={} maxAttempts={} error={}",
+                        operation,
+                        attempt,
+                        maxAttempts,
+                        exception.getMessage()
+                );
+            }
+        }
+        throw lastException;
+    }
+
+    private boolean isTimeout(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (current instanceof HttpTimeoutException
+                    || current instanceof SocketTimeoutException
+                    || current instanceof TimeoutException) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private List<List<String>> batchParagraphs(List<String> paragraphs) {

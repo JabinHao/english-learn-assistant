@@ -104,9 +104,11 @@ class CandidatePipelineIntegrationTest {
                             .sorted(Comparator.comparing((FeedArticle article) -> article.url().endsWith("/a") ? 9.2d : 8.4d).reversed())
                             .map(article -> new RankedCandidate(
                                     article.title(),
+                                    "中文标题：" + article.title(),
                                     article.url(),
                                     article.source(),
                                     article.summary(),
+                                    "中文摘要：" + article.summary(),
                                     article.publishedAt(),
                                     article.url().endsWith("/a") ? 9.2d : 8.4d,
                                     article.url().endsWith("/a") ? "Timely AI product update" : "Good technical reading candidate"

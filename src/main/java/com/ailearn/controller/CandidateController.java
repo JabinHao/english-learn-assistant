@@ -74,10 +74,12 @@ public class CandidateController {
         return new CandidateArticleResponse(
                 entity.getId(),
                 entity.getTitle(),
+                entity.getChineseTitle(),
                 entity.getUrl(),
                 entity.getSource(),
                 entity.getPublishedAt(),
                 entity.getSummary(),
+                entity.getChineseSummary(),
                 entity.getLlmScore(),
                 entity.getLlmReason(),
                 entity.isSelected()

@@ -2,10 +2,12 @@
 export interface CandidateArticle {
   id: number;
   title: string;
+  chineseTitle: string | null;
   url: string;
   source: string;
   publishedAt: string;
   summary: string;
+  chineseSummary: string | null;
   score: number | null;
   recommendationReason: string;
   selected: boolean;

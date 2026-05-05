@@ -77,6 +77,20 @@ class CandidateCoarseFilterTest {
         assertThat(result).extracting(FeedArticle::url).containsExactly("https://example.com/long");
     }
 
+    @Test
+    void filter_shouldRemoveRepositoryAndArtifactUrls() {
+        CandidateCoarseFilter filter = new CandidateCoarseFilter(config(), clock);
+
+        List<FeedArticle> result = filter.filter(List.of(
+                article("AI agent framework repository", "https://github.com/example/agent-framework", -1),
+                article("LLM inference release notes", "https://gitlab.com/example/inference/-/releases/v1", -1),
+                article("AI reasoning product article", "https://example.com/blog/ai-reasoning-product", -1)
+        ));
+
+        assertThat(result).extracting(FeedArticle::url)
+                .containsExactly("https://example.com/blog/ai-reasoning-product");
+    }
+
     private AppConfig config() {
         AppConfig appConfig = new AppConfig();
         AppConfig.Candidate candidate = new AppConfig.Candidate();

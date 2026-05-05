@@ -51,7 +51,9 @@ class CandidateControllerTest {
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].id").value(1))
                 .andExpect(jsonPath("$[0].title").value("Latest reasoning model"))
+                .andExpect(jsonPath("$[0].chineseTitle").value("中文 Latest reasoning model"))
                 .andExpect(jsonPath("$[0].score").value(8.9d))
+                .andExpect(jsonPath("$[0].chineseSummary").value("中文摘要"))
                 .andExpect(jsonPath("$[0].recommendationReason").value("Strong AI relevance"))
                 .andExpect(jsonPath("$[1].id").value(2));
     }
@@ -131,10 +133,12 @@ class CandidateControllerTest {
         ReflectionTestUtils.setField(entity, "id", id);
         entity.setBatch(batch);
         entity.setTitle(title);
+        entity.setChineseTitle("中文 " + title);
         entity.setUrl(url);
         entity.setSource("Test");
         entity.setPublishedAt(LocalDateTime.parse("2026-04-26T09:00:00"));
         entity.setSummary("Summary");
+        entity.setChineseSummary("中文摘要");
         entity.setRankOrder(rankOrder);
         entity.setLlmScore(score);
         entity.setLlmReason(reason);

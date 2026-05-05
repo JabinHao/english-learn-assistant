@@ -26,6 +26,9 @@ public class CandidateArticleEntity {
     @Column(nullable = false, length = 500)
     private String title;
 
+    @Column(length = 500)
+    private String chineseTitle;
+
     @Column(nullable = false, length = 1000)
     private String url;
 
@@ -36,6 +39,9 @@ public class CandidateArticleEntity {
 
     @Column(columnDefinition = "TEXT")
     private String summary;
+
+    @Column(columnDefinition = "TEXT")
+    private String chineseSummary;
 
     @Column(columnDefinition = "TEXT")
     private String coarseFilterReason;
@@ -73,6 +79,14 @@ public class CandidateArticleEntity {
         this.title = title;
     }
 
+    public String getChineseTitle() {
+        return chineseTitle;
+    }
+
+    public void setChineseTitle(String chineseTitle) {
+        this.chineseTitle = chineseTitle;
+    }
+
     public String getUrl() {
         return url;
     }
@@ -103,6 +117,14 @@ public class CandidateArticleEntity {
 
     public void setSummary(String summary) {
         this.summary = summary;
+    }
+
+    public String getChineseSummary() {
+        return chineseSummary;
+    }
+
+    public void setChineseSummary(String chineseSummary) {
+        this.chineseSummary = chineseSummary;
     }
 
     public String getCoarseFilterReason() {

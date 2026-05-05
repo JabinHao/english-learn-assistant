@@ -65,6 +65,8 @@ class CandidateGenerationServiceTest {
         assertThat(savedArticles.get()).hasSize(1);
         assertThat(savedArticles.get().getFirst().getRankOrder()).isEqualTo(1);
         assertThat(savedArticles.get().getFirst().getLlmScore()).isEqualTo(8.7d);
+        assertThat(savedArticles.get().getFirst().getChineseTitle()).isEqualTo("中文 A");
+        assertThat(savedArticles.get().getFirst().getChineseSummary()).isEqualTo("中文摘要 A");
         assertThat(savedArticles.get().getFirst().getBatch()).isSameAs(savedBatch.get());
     }
 
@@ -249,6 +251,16 @@ class CandidateGenerationServiceTest {
     }
 
     private RankedCandidate ranked(String title, String url, double score) {
-        return new RankedCandidate(title, url, "Test", "Summary", LocalDateTime.parse("2026-04-26T09:00:00"), score, "Strong fit");
+        return new RankedCandidate(
+                title,
+                "中文 " + title,
+                url,
+                "Test",
+                "Summary",
+                "中文摘要 " + title,
+                LocalDateTime.parse("2026-04-26T09:00:00"),
+                score,
+                "Strong fit"
+        );
     }
 }

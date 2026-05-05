@@ -68,8 +68,12 @@ public class CandidateSelectionService {
         learningArticle.setUrl(candidate.getUrl());
         learningArticle.setSource(candidate.getSource());
         learningArticle.setPublishedAt(candidate.getPublishedAt());
-        learningArticle.setSummary(candidate.getSummary());
+        learningArticle.setSummary(firstNonBlank(candidate.getChineseSummary(), candidate.getSummary()));
         learningArticle.setSelectedAt(LocalDateTime.now(clock));
         return learningArticle;
+    }
+
+    private String firstNonBlank(String first, String fallback) {
+        return first == null || first.isBlank() ? fallback : first;
     }
 }

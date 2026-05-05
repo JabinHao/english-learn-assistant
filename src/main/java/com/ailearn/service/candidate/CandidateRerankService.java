@@ -124,10 +124,12 @@ public class CandidateRerankService {
                 String url = candidateNode.path("url").asText("").trim();
                 double score = candidateNode.path("score").asDouble(Double.NaN);
                 String reason = candidateNode.path("reason").asText("").trim();
+                String chineseTitle = candidateNode.path("chineseTitle").asText("").trim();
+                String chineseSummary = candidateNode.path("chineseSummary").asText("").trim();
                 if (url.isBlank() || Double.isNaN(score)) {
                     continue;
                 }
-                candidates.add(new ScoredUrl(url, score, reason));
+                candidates.add(new ScoredUrl(url, score, reason, chineseTitle, chineseSummary));
             }
             return candidates;
         } catch (IOException exception) {
@@ -138,9 +140,11 @@ public class CandidateRerankService {
     private RankedCandidate toRankedCandidate(FeedArticle article, ScoredUrl candidate) {
         return new RankedCandidate(
                 article.title(),
+                firstNonBlank(candidate.chineseTitle(), article.title()),
                 article.url(),
                 article.source(),
                 article.summary(),
+                firstNonBlank(candidate.chineseSummary(), article.summary()),
                 article.publishedAt(),
                 candidate.score(),
                 candidate.reason()
@@ -172,6 +176,10 @@ public class CandidateRerankService {
         return withoutFence.replaceFirst("\\s*```\\s*$", "").trim();
     }
 
+    private String firstNonBlank(String first, String fallback) {
+        return first == null || first.isBlank() ? fallback : first;
+    }
+
     private static String loadPrompt(ResourceLoader resourceLoader) {
         Resource resource = resourceLoader.getResource("classpath:prompts/candidate-rerank-prompt.txt");
         try (InputStream inputStream = resource.getInputStream()) {
@@ -181,6 +189,6 @@ public class CandidateRerankService {
         }
     }
 
-    record ScoredUrl(String url, double score, String reason) {
+    record ScoredUrl(String url, double score, String reason, String chineseTitle, String chineseSummary) {
     }
 }

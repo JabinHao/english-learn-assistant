@@ -23,9 +23,9 @@ class CandidateRerankServiceTest {
                         {
                           "candidates": [
                             {"url":"https://example.com/c","score":6.1,"reason":"below threshold"},
-                            {"url":"https://example.com/b","score":8.2,"reason":"Strong AI learning article"},
+                            {"url":"https://example.com/b","score":8.2,"chineseTitle":"中文 B","chineseSummary":"中文摘要 B","reason":"Strong AI learning article"},
                             {"url":"https://example.com/unknown","score":9.9,"reason":"Not in source list"},
-                            {"url":"https://example.com/a","score":9.1,"reason":"Timely AI product update"}
+                            {"url":"https://example.com/a","score":9.1,"chineseTitle":"中文 A","chineseSummary":"中文摘要 A","reason":"Timely AI product update"}
                           ]
                         }
                         """,
@@ -43,6 +43,8 @@ class CandidateRerankServiceTest {
         assertThat(result).extracting(RankedCandidate::score)
                 .containsExactly(9.1d, 8.2d);
         assertThat(result.getFirst().reason()).isEqualTo("Timely AI product update");
+        assertThat(result.getFirst().chineseTitle()).isEqualTo("中文 A");
+        assertThat(result.getFirst().chineseSummary()).isEqualTo("中文摘要 A");
     }
 
     @Test
@@ -58,7 +60,7 @@ class CandidateRerankServiceTest {
                 ```json
                 {
                   "candidates": [
-                    {"url":"https://example.com/a","score":8.0,"reason":"Good fit"}
+                    {"url":"https://example.com/a","score":8.0,"chineseTitle":"中文标题","chineseSummary":"中文摘要","reason":"Good fit"}
                   ]
                 }
                 ```
@@ -67,6 +69,7 @@ class CandidateRerankServiceTest {
         assertThat(parsed)
                 .extracting(CandidateRerankService.ScoredUrl::url)
                 .containsExactly("https://example.com/a");
+        assertThat(parsed.getFirst().chineseTitle()).isEqualTo("中文标题");
     }
 
     @Test

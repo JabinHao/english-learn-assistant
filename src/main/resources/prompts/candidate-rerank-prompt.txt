@@ -10,6 +10,8 @@ Prefer:
 - concrete AI product or research updates,
 - LLM, agent, inference, multimodal, reasoning, or developer-tool topics,
 - articles that are specific enough to study, not vague announcements.
+Reject non-article pages such as code repositories, issue trackers, release pages, package registry pages, demos, landing pages, or raw files.
+For every selected URL, provide a concise Chinese title and Chinese summary to help the learner decide what to read.
 
 Return JSON only. Do not add markdown fences.
 
@@ -19,6 +21,8 @@ Schema:
     {
       "url": "string",
       "score": 0,
+      "chineseTitle": "中文标题",
+      "chineseSummary": "2-3 句中文摘要",
       "reason": "short reason"
     }
   ]
