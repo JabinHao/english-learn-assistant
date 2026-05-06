@@ -22,13 +22,14 @@ Schema:
       "url": "string",
       "score": 0,
       "chineseTitle": "中文标题",
-      "chineseSummary": "2-3 句中文摘要",
+      "chineseSummary": "中文摘要，1-2 句话，帮助用户快速判断是否值得精读",
       "reason": "short reason"
     }
   ]
 }
 
 Keep the response limited to the provided URLs.
+Translate the title and summarize the article in Simplified Chinese for each returned candidate.
 
 Articles:
 {{articles}}

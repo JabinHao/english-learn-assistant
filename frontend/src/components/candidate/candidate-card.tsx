@@ -14,6 +14,7 @@ export function CandidateCard({ candidate }: { candidate: CandidateArticle }) {
   const displayTitle = candidate.chineseTitle || candidate.title;
   const displaySummary = candidate.chineseSummary || candidate.summary;
   const showEnglishTitle = candidate.chineseTitle && candidate.chineseTitle !== candidate.title;
+  const showEnglishSummary = candidate.chineseSummary && candidate.chineseSummary !== candidate.summary;
 
   return (
     <Card className="border border-foreground/10 bg-card/90 backdrop-blur-sm">
@@ -51,6 +52,9 @@ export function CandidateCard({ candidate }: { candidate: CandidateArticle }) {
       </CardHeader>
       <CardContent className="space-y-2 text-sm">
         <p>{displaySummary}</p>
+        {showEnglishSummary ? (
+          <p className="text-muted-foreground">{candidate.summary}</p>
+        ) : null}
         <p className="text-muted-foreground italic">
           {candidate.recommendationReason}
         </p>

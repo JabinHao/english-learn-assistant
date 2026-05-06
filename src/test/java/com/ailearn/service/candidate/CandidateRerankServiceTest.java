@@ -25,7 +25,13 @@ class CandidateRerankServiceTest {
                             {"url":"https://example.com/c","score":6.1,"reason":"below threshold"},
                             {"url":"https://example.com/b","score":8.2,"chineseTitle":"中文 B","chineseSummary":"中文摘要 B","reason":"Strong AI learning article"},
                             {"url":"https://example.com/unknown","score":9.9,"reason":"Not in source list"},
-                            {"url":"https://example.com/a","score":9.1,"chineseTitle":"中文 A","chineseSummary":"中文摘要 A","reason":"Timely AI product update"}
+                            {
+                              "url":"https://example.com/a",
+                              "score":9.1,
+                              "reason":"Timely AI product update",
+                              "chineseTitle":"OpenAI 推理更新",
+                              "chineseSummary":"这篇文章介绍了 OpenAI 推理能力的最新进展。"
+                            }
                           ]
                         }
                         """,
@@ -43,8 +49,8 @@ class CandidateRerankServiceTest {
         assertThat(result).extracting(RankedCandidate::score)
                 .containsExactly(9.1d, 8.2d);
         assertThat(result.getFirst().reason()).isEqualTo("Timely AI product update");
-        assertThat(result.getFirst().chineseTitle()).isEqualTo("中文 A");
-        assertThat(result.getFirst().chineseSummary()).isEqualTo("中文摘要 A");
+        assertThat(result.getFirst().chineseTitle()).isEqualTo("OpenAI 推理更新");
+        assertThat(result.getFirst().chineseSummary()).isEqualTo("这篇文章介绍了 OpenAI 推理能力的最新进展。");
     }
 
     @Test
@@ -70,6 +76,33 @@ class CandidateRerankServiceTest {
                 .extracting(CandidateRerankService.ScoredUrl::url)
                 .containsExactly("https://example.com/a");
         assertThat(parsed.getFirst().chineseTitle()).isEqualTo("中文标题");
+    }
+
+    @Test
+    void parseResponse_shouldKeepChineseTitleAndSummaryWhenPresent() {
+        CandidateRerankService service = new CandidateRerankService(
+                config(5, 0.0d),
+                new ObjectMapper(),
+                prompt -> "",
+                "Prompt {{articles}}"
+        );
+
+        List<CandidateRerankService.ScoredUrl> parsed = service.parseResponse("""
+                {
+                  "candidates": [
+                    {
+                      "url":"https://example.com/a",
+                      "score":8.0,
+                      "reason":"Good fit",
+                      "chineseTitle":"AI 工具更新",
+                      "chineseSummary":"这篇文章适合用来筛选和精读。"
+                    }
+                  ]
+                }
+                """);
+
+        assertThat(parsed.getFirst().chineseTitle()).isEqualTo("AI 工具更新");
+        assertThat(parsed.getFirst().chineseSummary()).isEqualTo("这篇文章适合用来筛选和精读。");
     }
 
     @Test
