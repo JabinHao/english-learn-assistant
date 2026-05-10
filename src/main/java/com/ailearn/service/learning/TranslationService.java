@@ -4,6 +4,7 @@ import com.ailearn.config.AppConfig;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ailearn.observability.LlmTraceLogger;
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,9 @@ public class TranslationService {
 
     private static final Logger log = LoggerFactory.getLogger(TranslationService.class);
     private static final int MAX_BATCH_PARAGRAPH_CHARS = 4_000;
+    private static final String CACHE_OPERATION = "paragraph_translation_v1";
+    private static final TypeReference<List<String>> TRANSLATION_CACHE_TYPE = new TypeReference<>() {
+    };
 
     public interface TranslationChatClient {
         String chat(String prompt);
@@ -36,6 +40,7 @@ public class TranslationService {
     private final TranslationChatClient translationChatClient;
     private final String promptTemplate;
     private final int maxTimeoutRetries;
+    private final LlmPipelineCacheService cacheService;
 
     @Autowired
     public TranslationService(
@@ -43,9 +48,26 @@ public class TranslationService {
             ResourceLoader resourceLoader,
             LlmTraceLogger llmTraceLogger,
             AppConfig appConfig,
+            LlmPipelineCacheService cacheService,
             TranslationChatClient translationChatClient
     ) {
-        this(objectMapper, llmTraceLogger, translationChatClient, loadPrompt(resourceLoader), appConfig.getLlm().getMaxRetries());
+        this(objectMapper, llmTraceLogger, translationChatClient, loadPrompt(resourceLoader), appConfig.getLlm().getMaxRetries(), cacheService);
+    }
+
+    TranslationService(
+            ObjectMapper objectMapper,
+            LlmTraceLogger llmTraceLogger,
+            TranslationChatClient translationChatClient,
+            String promptTemplate,
+            int maxTimeoutRetries,
+            LlmPipelineCacheService cacheService
+    ) {
+        this.objectMapper = objectMapper;
+        this.llmTraceLogger = llmTraceLogger;
+        this.translationChatClient = translationChatClient;
+        this.promptTemplate = promptTemplate;
+        this.maxTimeoutRetries = Math.max(0, maxTimeoutRetries);
+        this.cacheService = cacheService;
     }
 
     TranslationService(
@@ -55,11 +77,7 @@ public class TranslationService {
             String promptTemplate,
             int maxTimeoutRetries
     ) {
-        this.objectMapper = objectMapper;
-        this.llmTraceLogger = llmTraceLogger;
-        this.translationChatClient = translationChatClient;
-        this.promptTemplate = promptTemplate;
-        this.maxTimeoutRetries = Math.max(0, maxTimeoutRetries);
+        this(objectMapper, llmTraceLogger, translationChatClient, promptTemplate, maxTimeoutRetries, null);
     }
 
     TranslationService(
@@ -67,7 +85,7 @@ public class TranslationService {
             TranslationChatClient translationChatClient,
             String promptTemplate
     ) {
-        this(objectMapper, new LlmTraceLogger(new AppConfig()), translationChatClient, promptTemplate, new AppConfig().getLlm().getMaxRetries());
+        this(objectMapper, new LlmTraceLogger(new AppConfig()), translationChatClient, promptTemplate, new AppConfig().getLlm().getMaxRetries(), null);
     }
 
     public List<String> translate(List<String> paragraphs) {
@@ -88,11 +106,21 @@ public class TranslationService {
     private List<String> translateBatch(List<String> paragraphs, int batchNumber, int batchCount) {
         String prompt = buildPrompt(paragraphs);
         String operation = "paragraph_translation_batch_" + batchNumber + "_of_" + batchCount;
+        if (cacheService != null) {
+            List<String> cached = cacheService.read(CACHE_OPERATION, prompt, TRANSLATION_CACHE_TYPE).orElse(null);
+            if (cached != null) {
+                return cached;
+            }
+        }
         llmTraceLogger.logRequest(log, operation, prompt);
         try {
             String response = chatWithTimeoutRetry(prompt, operation);
             llmTraceLogger.logResponse(log, operation, response);
-            return parseResponse(response);
+            List<String> translations = parseResponse(response);
+            if (cacheService != null) {
+                cacheService.write(CACHE_OPERATION, prompt, translations);
+            }
+            return translations;
         } catch (RuntimeException exception) {
             llmTraceLogger.logFailure(log, operation, exception);
             throw exception;

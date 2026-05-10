@@ -2,6 +2,7 @@ package com.ailearn.service.learning;
 
 import com.ailearn.model.VocabularyCandidate;
 import com.ailearn.observability.LlmTraceLogger;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -21,6 +22,9 @@ import java.util.List;
 public class VocabularyExtractionService {
 
     private static final Logger log = LoggerFactory.getLogger(VocabularyExtractionService.class);
+    private static final String CACHE_OPERATION = "vocabulary_extraction_v1";
+    private static final TypeReference<List<VocabularyCandidate>> VOCABULARY_CACHE_TYPE = new TypeReference<>() {
+    };
 
     public interface VocabularyChatClient {
         String chat(String prompt);
@@ -30,15 +34,31 @@ public class VocabularyExtractionService {
     private final LlmTraceLogger llmTraceLogger;
     private final VocabularyChatClient vocabularyChatClient;
     private final String promptTemplate;
+    private final LlmPipelineCacheService cacheService;
 
     @Autowired
     public VocabularyExtractionService(
             ObjectMapper objectMapper,
             ResourceLoader resourceLoader,
             LlmTraceLogger llmTraceLogger,
+            LlmPipelineCacheService cacheService,
             VocabularyChatClient vocabularyChatClient
     ) {
-        this(objectMapper, llmTraceLogger, vocabularyChatClient, loadPrompt(resourceLoader));
+        this(objectMapper, llmTraceLogger, vocabularyChatClient, loadPrompt(resourceLoader), cacheService);
+    }
+
+    VocabularyExtractionService(
+            ObjectMapper objectMapper,
+            LlmTraceLogger llmTraceLogger,
+            VocabularyChatClient vocabularyChatClient,
+            String promptTemplate,
+            LlmPipelineCacheService cacheService
+    ) {
+        this.objectMapper = objectMapper;
+        this.llmTraceLogger = llmTraceLogger;
+        this.vocabularyChatClient = vocabularyChatClient;
+        this.promptTemplate = promptTemplate;
+        this.cacheService = cacheService;
     }
 
     VocabularyExtractionService(
@@ -47,10 +67,7 @@ public class VocabularyExtractionService {
             VocabularyChatClient vocabularyChatClient,
             String promptTemplate
     ) {
-        this.objectMapper = objectMapper;
-        this.llmTraceLogger = llmTraceLogger;
-        this.vocabularyChatClient = vocabularyChatClient;
-        this.promptTemplate = promptTemplate;
+        this(objectMapper, llmTraceLogger, vocabularyChatClient, promptTemplate, null);
     }
 
     VocabularyExtractionService(
@@ -58,7 +75,7 @@ public class VocabularyExtractionService {
             VocabularyChatClient vocabularyChatClient,
             String promptTemplate
     ) {
-        this(objectMapper, new LlmTraceLogger(new com.ailearn.config.AppConfig()), vocabularyChatClient, promptTemplate);
+        this(objectMapper, new LlmTraceLogger(new com.ailearn.config.AppConfig()), vocabularyChatClient, promptTemplate, null);
     }
 
     public List<VocabularyCandidate> extract(List<String> paragraphs) {
@@ -67,11 +84,21 @@ public class VocabularyExtractionService {
         }
 
         String prompt = buildPrompt(paragraphs);
+        if (cacheService != null) {
+            List<VocabularyCandidate> cached = cacheService.read(CACHE_OPERATION, prompt, VOCABULARY_CACHE_TYPE).orElse(null);
+            if (cached != null) {
+                return cached;
+            }
+        }
         llmTraceLogger.logRequest(log, "vocabulary_extraction", prompt);
         try {
             String response = vocabularyChatClient.chat(prompt);
             llmTraceLogger.logResponse(log, "vocabulary_extraction", response);
-            return parseResponse(response);
+            List<VocabularyCandidate> candidates = parseResponse(response);
+            if (cacheService != null) {
+                cacheService.write(CACHE_OPERATION, prompt, candidates);
+            }
+            return candidates;
         } catch (RuntimeException exception) {
             llmTraceLogger.logFailure(log, "vocabulary_extraction", exception);
             throw exception;
