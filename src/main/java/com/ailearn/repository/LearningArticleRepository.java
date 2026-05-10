@@ -10,5 +10,7 @@ public interface LearningArticleRepository extends JpaRepository<LearningArticle
 
     Optional<LearningArticleEntity> findByCandidateArticleId(Long candidateArticleId);
 
+    Optional<LearningArticleEntity> findFirstByUrlOrderByCreatedAtDesc(String url);
+
     List<LearningArticleEntity> findAllByOrderBySelectedAtDescCreatedAtDesc();
 }

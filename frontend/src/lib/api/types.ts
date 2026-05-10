@@ -72,3 +72,5 @@ export interface SelectCandidateResponse {
   learningArticleId: number;
   status: LearningArticleStatus;
 }
+
+export type CreateLearningArticleResponse = SelectCandidateResponse;

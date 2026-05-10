@@ -1,5 +1,18 @@
 import { apiFetch } from "./client";
-import type { LearningArticle, VocabularyItem } from "./types";
+import type {
+  CreateLearningArticleResponse,
+  LearningArticle,
+  VocabularyItem,
+} from "./types";
+
+export function createLearningArticleFromUrl(
+  url: string,
+): Promise<CreateLearningArticleResponse> {
+  return apiFetch<CreateLearningArticleResponse>("/api/learning-articles", {
+    method: "POST",
+    body: JSON.stringify({ url }),
+  });
+}
 
 export function fetchLearningArticle(id: number): Promise<LearningArticle> {
   return apiFetch<LearningArticle>(`/api/learning-articles/${id}`);

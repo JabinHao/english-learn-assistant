@@ -7,6 +7,7 @@ import com.ailearn.entity.VocabularyItemEntity;
 import com.ailearn.repository.ArticleParagraphRepository;
 import com.ailearn.repository.LearningArticleRepository;
 import com.ailearn.repository.VocabularyItemRepository;
+import com.ailearn.service.learning.ManualLearningArticleService;
 import com.ailearn.service.learning.LearningWorkflowService;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -26,6 +27,33 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class LearningArticleControllerTest {
+
+    @Test
+    void createLearningArticle_shouldSubmitManualUrlForStudy() throws Exception {
+        ManualLearningArticleService manualLearningArticleService = new ManualLearningArticleService(null, null, null, null, null) {
+            @Override
+            public com.ailearn.api.learning.SelectCandidateResponse submitUrl(String url) {
+                return new com.ailearn.api.learning.SelectCandidateResponse(88L, 7L, "VOCAB_READY");
+            }
+        };
+
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new LearningArticleController(
+                        learningRepository(learningArticle()),
+                        paragraphRepository(List.of()),
+                        vocabularyRepository(List.of()),
+                        workflowService(),
+                        manualLearningArticleService))
+                .setMessageConverters(new MappingJackson2HttpMessageConverter())
+                .build();
+
+        mockMvc.perform(post("/api/learning-articles")
+                        .contentType("application/json")
+                        .content("{\"url\":\"https://example.com/article\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.learningArticleId").value(88))
+                .andExpect(jsonPath("$.candidateArticleId").value(7))
+                .andExpect(jsonPath("$.status").value("VOCAB_READY"));
+    }
 
     @Test
     void getLearningArticle_shouldReturnArticleParagraphsAndVocabulary() throws Exception {
@@ -49,7 +77,8 @@ class LearningArticleControllerTest {
                         learningRepository(article),
                         paragraphRepository(List.of(paragraph)),
                         vocabularyRepository(List.of(vocabularyItem)),
-                        workflowService()))
+                        workflowService(),
+                        null))
                 .setMessageConverters(new MappingJackson2HttpMessageConverter())
                 .build();
 
@@ -87,7 +116,8 @@ class LearningArticleControllerTest {
                         learningRepository(learningArticle()),
                         paragraphRepository(List.of()),
                         vocabularyRepository(List.of()),
-                        workflowService))
+                        workflowService,
+                        null))
                 .setMessageConverters(new MappingJackson2HttpMessageConverter())
                 .build();
 
@@ -120,7 +150,8 @@ class LearningArticleControllerTest {
                         learningRepository(learningArticle()),
                         paragraphRepository(List.of()),
                         vocabularyRepository(List.of()),
-                        workflowService))
+                        workflowService,
+                        null))
                 .setMessageConverters(new MappingJackson2HttpMessageConverter())
                 .build();
 

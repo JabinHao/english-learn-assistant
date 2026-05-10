@@ -1,4 +1,5 @@
 import { CandidateList } from "@/components/candidate/candidate-list";
+import { ManualArticleForm } from "@/components/learning/manual-article-form";
 
 export default function Home() {
   return (
@@ -11,6 +12,7 @@ export default function Home() {
           Choose one article to study today.
         </p>
       </div>
+      <ManualArticleForm />
       <CandidateList />
     </div>
   );
