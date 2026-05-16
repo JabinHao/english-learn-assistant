@@ -97,12 +97,12 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
       <div
         className={
           vocabularyExpanded && tutorExpanded
-            ? "grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)_16rem] lg:gap-6"
+            ? "grid gap-4 md:grid-flow-row-dense md:grid-cols-[14rem_minmax(0,1fr)_16rem] lg:gap-6"
             : vocabularyExpanded
-              ? "grid gap-4 md:grid-cols-[14rem_minmax(0,1fr)_4rem] lg:gap-6"
+              ? "grid gap-4 md:grid-flow-row-dense md:grid-cols-[14rem_minmax(0,1fr)_4rem] lg:gap-6"
               : tutorExpanded
-                ? "grid gap-4 md:grid-cols-[4rem_minmax(0,1fr)_16rem] lg:gap-6"
-                : "grid gap-4 md:grid-cols-[4rem_minmax(0,1fr)_4rem] lg:gap-6"
+                ? "grid gap-4 md:grid-flow-row-dense md:grid-cols-[4rem_minmax(0,1fr)_16rem] lg:gap-6"
+                : "grid gap-4 md:grid-flow-row-dense md:grid-cols-[4rem_minmax(0,1fr)_4rem] lg:gap-6"
         }
       >
         <div
