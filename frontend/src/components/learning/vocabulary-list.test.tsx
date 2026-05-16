@@ -95,4 +95,19 @@ describe("VocabularyList", () => {
       ).toBeInTheDocument();
     });
   });
+
+  it("offers tutor follow-up for a vocabulary item", () => {
+    const onAskTutor = vi.fn();
+    render(
+      <VocabularyList
+        learningArticleId={88}
+        items={items}
+        onAskTutor={onAskTutor}
+      />,
+    );
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Ask Tutor" })[0]);
+
+    expect(onAskTutor).toHaveBeenCalledWith(items[0]);
+  });
 });

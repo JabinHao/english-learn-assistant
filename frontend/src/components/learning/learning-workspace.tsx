@@ -25,6 +25,16 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
           intent: "EXPLAIN_PARAGRAPH",
         })
       }
+      onAskTutor={(paragraph, selectedText) => {
+        setPendingRequest({
+          message: "Explain this selected text in context.",
+          paragraphIndex: paragraph.paragraphIndex,
+          selectedText,
+          mode: "ASK",
+          intent: "EXPLAIN_SELECTION",
+        });
+        setActivePanel("tutor");
+      }}
     />
   );
 
@@ -32,6 +42,15 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
     <VocabularyList
       learningArticleId={article.id}
       items={article.vocabularyItems}
+      onAskTutor={(item) => {
+        setPendingRequest({
+          message: `Explain how "${item.word}" is used in this article.`,
+          selectedText: item.word,
+          mode: "ASK",
+          intent: "VOCABULARY_HELP",
+        });
+        setActivePanel("tutor");
+      }}
     />
   );
 

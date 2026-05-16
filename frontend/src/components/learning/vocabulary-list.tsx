@@ -10,9 +10,11 @@ import { useState } from "react";
 export function VocabularyList({
   learningArticleId,
   items,
+  onAskTutor,
 }: {
   learningArticleId: number;
   items: VocabularyItem[];
+  onAskTutor?: (item: VocabularyItem) => void;
 }) {
   const [localItems, setLocalItems] = useState(items);
   const [pushingId, setPushingId] = useState<number | null>(null);
@@ -97,22 +99,33 @@ export function VocabularyList({
                   </p>
                 )}
               </div>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={pushingId === item.id || removingId === item.id}
-                onClick={() =>
-                  item.eudicPushed ? handleRemove(item.id) : handlePush(item.id)
-                }
-              >
-                {pushingId === item.id
-                  ? "Adding..."
-                  : removingId === item.id
-                    ? "Removing..."
-                    : item.eudicPushed
-                      ? "Remove from Eudic"
-                      : "Add to Eudic"}
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                {onAskTutor ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onAskTutor(item)}
+                  >
+                    Ask Tutor
+                  </Button>
+                ) : null}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={pushingId === item.id || removingId === item.id}
+                  onClick={() =>
+                    item.eudicPushed ? handleRemove(item.id) : handlePush(item.id)
+                  }
+                >
+                  {pushingId === item.id
+                    ? "Adding..."
+                    : removingId === item.id
+                      ? "Removing..."
+                      : item.eudicPushed
+                        ? "Remove from Eudic"
+                        : "Add to Eudic"}
+                </Button>
+              </div>
             </div>
             <div className="mt-2 space-y-1 text-sm">
               {item.chineseDefinition ? (

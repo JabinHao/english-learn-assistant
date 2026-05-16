@@ -54,4 +54,20 @@ describe("BilingualParagraphs", () => {
 
     expect(onExplain).toHaveBeenCalledWith(paragraphs[1]);
   });
+
+  it("offers ask tutor for selected text", () => {
+    const onAskTutor = vi.fn();
+    vi.spyOn(window, "getSelection").mockReturnValue({
+      toString: () => "transforming the world",
+    } as Selection);
+
+    render(
+      <BilingualParagraphs paragraphs={paragraphs} onAskTutor={onAskTutor} />,
+    );
+
+    fireEvent.mouseUp(screen.getByText("AI is transforming the world."));
+    fireEvent.click(screen.getByRole("button", { name: "Ask Tutor" }));
+
+    expect(onAskTutor).toHaveBeenCalledWith(paragraphs[0], "transforming the world");
+  });
 });

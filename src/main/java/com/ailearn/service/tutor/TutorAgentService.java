@@ -74,8 +74,9 @@ public class TutorAgentService {
             }
         }
 
-        messages.add(UserMessage.from(userMessage));
-        llmTraceLogger.logRequest(log, "tutor_chat", "context=" + context + "\nuser=" + userMessage);
+        String finalUserPrompt = buildFinalUserPrompt(userMessage, requestContext);
+        messages.add(UserMessage.from(finalUserPrompt));
+        llmTraceLogger.logRequest(log, "tutor_chat", "context=" + context + "\nuser=" + finalUserPrompt);
         try {
             String reply = chatLanguageModel.chat(messages).aiMessage().text();
             llmTraceLogger.logResponse(log, "tutor_chat", reply);
@@ -96,6 +97,25 @@ public class TutorAgentService {
     }
 
     public record HistoricalChatMessage(String role, String content) {
+    }
+
+    private static String buildFinalUserPrompt(String userMessage, TutorRequestContext requestContext) {
+        if (requestContext.equals(TutorRequestContext.empty())) {
+            return userMessage;
+        }
+
+        StringBuilder builder = new StringBuilder();
+        if (requestContext.mode() != null && !requestContext.mode().isBlank()) {
+            builder.append("Mode: ").append(requestContext.mode()).append("\n");
+        }
+        if (requestContext.intent() != null && !requestContext.intent().isBlank()) {
+            builder.append("Intent: ").append(requestContext.intent()).append("\n");
+        }
+        if (requestContext.selectedText() != null && !requestContext.selectedText().isBlank()) {
+            builder.append("Selected text: ").append(requestContext.selectedText()).append("\n");
+        }
+        builder.append("Question: ").append(userMessage);
+        return builder.toString();
     }
 
     public record TutorRequestContext(

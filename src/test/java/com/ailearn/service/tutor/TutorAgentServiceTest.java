@@ -98,4 +98,47 @@ class TutorAgentServiceTest {
 
         assertThat(capturedParagraphIndexes).containsExactly(2);
     }
+
+    @Test
+    void reply_shouldIncludeSelectionAndIntentInFinalUserPrompt() {
+        List<ChatMessage> capturedMessages = new ArrayList<>();
+        ChatLanguageModel model = new ChatLanguageModel() {
+            @Override
+            public ChatResponse doChat(dev.langchain4j.model.chat.request.ChatRequest chatRequest) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public ChatResponse chat(List<ChatMessage> messages) {
+                capturedMessages.addAll(messages);
+                return ChatResponse.builder()
+                        .aiMessage(dev.langchain4j.data.message.AiMessage.from("这是解释"))
+                        .build();
+            }
+        };
+
+        TutorAgentService service = new TutorAgentService(
+                model,
+                new DefaultResourceLoader(),
+                new ArticleTutorContextService(null, null, null) {
+                    @Override
+                    public String buildContext(Long learningArticleId) {
+                        return "context";
+                    }
+                }
+        );
+
+        service.reply(
+                88L,
+                List.of(),
+                "Explain this phrase.",
+                new TutorAgentService.TutorRequestContext(null, "ship at scale", "ASK", "EXPLAIN_SELECTION")
+        );
+
+        String finalPrompt = ((UserMessage) capturedMessages.getLast()).singleText();
+        assertThat(finalPrompt).contains("Mode: ASK");
+        assertThat(finalPrompt).contains("Intent: EXPLAIN_SELECTION");
+        assertThat(finalPrompt).contains("Selected text: ship at scale");
+        assertThat(finalPrompt).contains("Question: Explain this phrase.");
+    }
 }
