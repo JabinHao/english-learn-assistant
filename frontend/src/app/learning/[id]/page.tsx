@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { ArticleSummary } from "@/components/learning/article-summary";
 import { LearningWorkspace } from "@/components/learning/learning-workspace";
 import { ApiError } from "@/lib/api/client";
 import { fetchLearningArticle } from "@/lib/api/learning";
@@ -28,11 +27,6 @@ export default async function LearningArticlePage({
   }
 
   return (
-    <div className="space-y-8">
-      <div className="mx-auto max-w-5xl">
-        <ArticleSummary article={article} />
-      </div>
-      <LearningWorkspace article={article} />
-    </div>
+    <LearningWorkspace article={article} />
   );
 }

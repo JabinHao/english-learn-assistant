@@ -4,6 +4,7 @@ import { useState } from "react";
 import { BilingualParagraphs } from "./bilingual-paragraphs";
 import { VocabularyList } from "./vocabulary-list";
 import { TutorPanel } from "@/components/tutor/tutor-panel";
+import { ArticleSummary } from "./article-summary";
 import type { LearningArticle, TutorChatRequest } from "@/lib/api/types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -67,7 +68,7 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
 
   return (
     <>
-      <div className="space-y-4 xl:hidden">
+      <div className="space-y-4 lg:hidden">
         <div className="grid grid-cols-3 gap-2">
           <button
             type="button"
@@ -96,21 +97,22 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
       <div
         className={
           vocabularyExpanded && tutorExpanded
-            ? "grid gap-6 xl:grid-cols-[18rem_minmax(0,1fr)_20rem]"
+            ? "grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)_18rem]"
             : vocabularyExpanded
-              ? "grid gap-6 xl:grid-cols-[18rem_minmax(0,1fr)_4rem]"
+              ? "grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)_4rem]"
               : tutorExpanded
-                ? "grid gap-6 xl:grid-cols-[4rem_minmax(0,1fr)_20rem]"
-                : "grid gap-6 xl:grid-cols-[4rem_minmax(0,1fr)_4rem]"
+                ? "grid gap-6 lg:grid-cols-[4rem_minmax(0,1fr)_18rem]"
+                : "grid gap-6 lg:grid-cols-[4rem_minmax(0,1fr)_4rem]"
         }
       >
         <div
           className={
             activePanel === "reading"
-              ? "block xl:col-start-2 xl:mx-auto xl:w-full xl:max-w-3xl"
-              : "hidden xl:col-start-2 xl:mx-auto xl:block xl:w-full xl:max-w-3xl"
+              ? "block space-y-8 lg:col-start-2 lg:mx-auto lg:w-full lg:max-w-3xl"
+              : "hidden space-y-8 lg:col-start-2 lg:mx-auto lg:block lg:w-full lg:max-w-3xl"
           }
         >
+          <ArticleSummary article={article} />
           {readingPanel}
         </div>
 
@@ -120,8 +122,8 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
             activePanel === "vocabulary"
               ? "block"
               : vocabularyExpanded
-                ? "hidden xl:col-start-1 xl:block"
-                : "hidden xl:col-start-1 xl:block"
+                ? "hidden lg:col-start-1 lg:block"
+                : "hidden lg:col-start-1 lg:block"
           }
         >
           {vocabularyExpanded ? (
@@ -131,7 +133,7 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
                 <button
                   type="button"
                   aria-label="Collapse vocabulary"
-                  className="absolute -right-3 top-6 hidden size-6 items-center justify-center rounded-full border bg-background shadow-sm xl:flex"
+                  className="absolute -right-3 top-6 hidden size-6 items-center justify-center rounded-full border bg-background shadow-sm lg:flex"
                   onClick={() => setVocabularyExpanded(false)}
                 >
                   <ChevronLeft className="size-4" />
@@ -139,7 +141,7 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
               </div>
             </div>
           ) : (
-            <div className="sticky top-20 hidden h-[calc(100vh-6.5rem)] flex-col items-center gap-3 rounded-2xl border bg-background/95 px-2 py-4 shadow-sm xl:flex">
+            <div className="sticky top-20 hidden h-[calc(100vh-6.5rem)] flex-col items-center gap-3 rounded-2xl border bg-background/95 px-2 py-4 shadow-sm lg:flex">
               <span className="[writing-mode:vertical-rl] rotate-180 text-xs font-medium text-muted-foreground">
                 Vocabulary hidden
               </span>
@@ -161,8 +163,8 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
             activePanel === "tutor"
               ? "block"
               : tutorExpanded
-                ? "hidden xl:col-start-3 xl:block"
-                : "hidden xl:col-start-3 xl:block"
+                ? "hidden lg:col-start-3 lg:block"
+                : "hidden lg:col-start-3 lg:block"
           }
         >
           {tutorExpanded ? (
@@ -172,7 +174,7 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
                 <button
                   type="button"
                   aria-label="Collapse tutor"
-                  className="absolute -left-3 top-6 hidden size-6 items-center justify-center rounded-full border bg-background shadow-sm xl:flex"
+                  className="absolute -left-3 top-6 hidden size-6 items-center justify-center rounded-full border bg-background shadow-sm lg:flex"
                   onClick={() => setTutorExpanded(false)}
                 >
                   <ChevronRight className="size-4" />
@@ -180,7 +182,7 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
               </div>
             </div>
           ) : (
-            <div className="sticky top-20 hidden h-[calc(100vh-6.5rem)] flex-col items-center gap-3 rounded-2xl border bg-background/95 px-2 py-4 shadow-sm xl:flex">
+            <div className="sticky top-20 hidden h-[calc(100vh-6.5rem)] flex-col items-center gap-3 rounded-2xl border bg-background/95 px-2 py-4 shadow-sm lg:flex">
               <span className="[writing-mode:vertical-rl] rotate-180 text-xs font-medium text-muted-foreground">
                 Tutor hidden
               </span>
