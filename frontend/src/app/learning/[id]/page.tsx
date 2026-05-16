@@ -29,7 +29,9 @@ export default async function LearningArticlePage({
 
   return (
     <div className="space-y-8">
-      <ArticleSummary article={article} />
+      <div className="mx-auto max-w-5xl">
+        <ArticleSummary article={article} />
+      </div>
       <LearningWorkspace article={article} />
     </div>
   );

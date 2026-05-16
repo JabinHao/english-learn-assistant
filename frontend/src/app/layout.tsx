@@ -37,7 +37,7 @@ export default function RootLayout({
           </div>
         </header>
         <main className="flex-1">
-          <div className="mx-auto max-w-5xl px-4 py-6">{children}</div>
+          <div className="mx-auto w-full px-4 py-6">{children}</div>
         </main>
       </body>
     </html>

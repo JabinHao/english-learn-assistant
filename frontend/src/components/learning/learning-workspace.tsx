@@ -93,12 +93,22 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
         </div>
       </div>
 
-      <div className="relative">
+      <div
+        className={
+          vocabularyExpanded && tutorExpanded
+            ? "grid gap-6 xl:grid-cols-[18rem_minmax(0,1fr)_20rem]"
+            : vocabularyExpanded
+              ? "grid gap-6 xl:grid-cols-[18rem_minmax(0,1fr)_4rem]"
+              : tutorExpanded
+                ? "grid gap-6 xl:grid-cols-[4rem_minmax(0,1fr)_20rem]"
+                : "grid gap-6 xl:grid-cols-[4rem_minmax(0,1fr)_4rem]"
+        }
+      >
         <div
           className={
             activePanel === "reading"
-              ? "block xl:mx-auto xl:max-w-3xl"
-              : "hidden xl:mx-auto xl:block xl:max-w-3xl"
+              ? "block xl:col-start-2 xl:mx-auto xl:w-full xl:max-w-3xl"
+              : "hidden xl:col-start-2 xl:mx-auto xl:block xl:w-full xl:max-w-3xl"
           }
         >
           {readingPanel}
@@ -110,24 +120,26 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
             activePanel === "vocabulary"
               ? "block"
               : vocabularyExpanded
-                ? "hidden xl:fixed xl:bottom-6 xl:left-4 xl:top-20 xl:block xl:w-72 xl:overflow-y-auto"
-                : "hidden xl:fixed xl:bottom-6 xl:left-4 xl:top-20 xl:block xl:w-16"
+                ? "hidden xl:col-start-1 xl:block"
+                : "hidden xl:col-start-1 xl:block"
           }
         >
           {vocabularyExpanded ? (
-            <div className="relative">
-              {vocabularyPanel}
-              <button
-                type="button"
-                aria-label="Collapse vocabulary"
-                className="absolute -right-3 top-6 hidden size-6 items-center justify-center rounded-full border bg-background shadow-sm xl:flex"
-                onClick={() => setVocabularyExpanded(false)}
-              >
-                <ChevronLeft className="size-4" />
-              </button>
+            <div className="sticky top-20 max-h-[calc(100vh-6.5rem)] overflow-y-auto">
+              <div className="relative">
+                {vocabularyPanel}
+                <button
+                  type="button"
+                  aria-label="Collapse vocabulary"
+                  className="absolute -right-3 top-6 hidden size-6 items-center justify-center rounded-full border bg-background shadow-sm xl:flex"
+                  onClick={() => setVocabularyExpanded(false)}
+                >
+                  <ChevronLeft className="size-4" />
+                </button>
+              </div>
             </div>
           ) : (
-            <div className="hidden h-full flex-col items-center gap-3 rounded-2xl border bg-background/95 px-2 py-4 shadow-sm xl:flex">
+            <div className="sticky top-20 hidden h-[calc(100vh-6.5rem)] flex-col items-center gap-3 rounded-2xl border bg-background/95 px-2 py-4 shadow-sm xl:flex">
               <span className="[writing-mode:vertical-rl] rotate-180 text-xs font-medium text-muted-foreground">
                 Vocabulary hidden
               </span>
@@ -149,24 +161,26 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
             activePanel === "tutor"
               ? "block"
               : tutorExpanded
-                ? "hidden xl:fixed xl:bottom-6 xl:right-4 xl:top-20 xl:block xl:w-80 xl:overflow-y-auto"
-                : "hidden xl:fixed xl:bottom-6 xl:right-4 xl:top-20 xl:block xl:w-16"
+                ? "hidden xl:col-start-3 xl:block"
+                : "hidden xl:col-start-3 xl:block"
           }
         >
           {tutorExpanded ? (
-            <div className="relative">
-              {tutorPanel}
-              <button
-                type="button"
-                aria-label="Collapse tutor"
-                className="absolute -left-3 top-6 hidden size-6 items-center justify-center rounded-full border bg-background shadow-sm xl:flex"
-                onClick={() => setTutorExpanded(false)}
-              >
-                <ChevronRight className="size-4" />
-              </button>
+            <div className="sticky top-20 max-h-[calc(100vh-6.5rem)] overflow-y-auto">
+              <div className="relative">
+                {tutorPanel}
+                <button
+                  type="button"
+                  aria-label="Collapse tutor"
+                  className="absolute -left-3 top-6 hidden size-6 items-center justify-center rounded-full border bg-background shadow-sm xl:flex"
+                  onClick={() => setTutorExpanded(false)}
+                >
+                  <ChevronRight className="size-4" />
+                </button>
+              </div>
             </div>
           ) : (
-            <div className="hidden h-full flex-col items-center gap-3 rounded-2xl border bg-background/95 px-2 py-4 shadow-sm xl:flex">
+            <div className="sticky top-20 hidden h-[calc(100vh-6.5rem)] flex-col items-center gap-3 rounded-2xl border bg-background/95 px-2 py-4 shadow-sm xl:flex">
               <span className="[writing-mode:vertical-rl] rotate-180 text-xs font-medium text-muted-foreground">
                 Tutor hidden
               </span>

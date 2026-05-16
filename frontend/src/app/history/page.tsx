@@ -11,7 +11,7 @@ export default async function HistoryPage() {
     const isNotReady = error instanceof ApiError && error.status === 404;
 
     return (
-      <div className="space-y-6">
+      <div className="mx-auto max-w-5xl space-y-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Learning History</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -29,7 +29,7 @@ export default async function HistoryPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Learning History</h1>
         <p className="mt-1 text-sm text-muted-foreground">
