@@ -122,5 +122,30 @@ describe("LearningWorkspace", () => {
 
     expect(screen.getByRole("button", { name: "Expand vocabulary" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Expand tutor" })).toBeInTheDocument();
+    expect(screen.getByText("Vocabulary hidden")).toBeInTheDocument();
+    expect(screen.getByText("Tutor hidden")).toBeInTheDocument();
+  });
+
+  it("renders vocabulary and tutor as desktop sidebars", () => {
+    render(
+      <LearningWorkspace
+        article={{
+          id: 88,
+          candidateArticleId: 1,
+          status: "VOCAB_READY",
+          title: "Article",
+          url: "https://example.com",
+          source: "Example",
+          publishedAt: "2026-05-16T10:00:00",
+          articleContent: "Article body",
+          summary: "Summary",
+          paragraphs: [],
+          vocabularyItems: [],
+        }}
+      />,
+    );
+
+    expect(screen.getByLabelText("Vocabulary sidebar")).toBeInTheDocument();
+    expect(screen.getByLabelText("Tutor sidebar")).toBeInTheDocument();
   });
 });
