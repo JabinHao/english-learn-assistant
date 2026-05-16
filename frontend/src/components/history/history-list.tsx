@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { LearningHistoryItem } from "@/lib/api/types";
+import { formatDisplayDate } from "@/lib/date";
 
 export function HistoryList({ items }: { items: LearningHistoryItem[] }) {
   if (items.length === 0) {
@@ -29,7 +30,7 @@ export function HistoryList({ items }: { items: LearningHistoryItem[] }) {
           </CardHeader>
           <CardContent className="flex flex-wrap gap-4 text-sm text-muted-foreground">
             <span>{item.source}</span>
-            <span>{new Date(item.publishedAt).toLocaleDateString()}</span>
+            <span>{formatDisplayDate(item.publishedAt)}</span>
             <span>{item.status}</span>
           </CardContent>
         </Card>

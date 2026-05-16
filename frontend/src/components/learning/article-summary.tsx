@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { LearningArticle } from "@/lib/api/types";
+import { formatDisplayDateTime } from "@/lib/date";
 
 const statusTone: Record<LearningArticle["status"], string> = {
   SELECTED: "bg-amber-100 text-amber-900",
@@ -17,7 +18,7 @@ export function ArticleSummary({ article }: { article: LearningArticle }) {
       <CardHeader className="gap-3">
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <Badge variant="secondary">{article.source}</Badge>
-          <span>{new Date(article.publishedAt).toLocaleString()}</span>
+          <span>{formatDisplayDateTime(article.publishedAt)}</span>
           <span
             className={`rounded-full px-2 py-1 font-medium ${statusTone[article.status]}`}
           >

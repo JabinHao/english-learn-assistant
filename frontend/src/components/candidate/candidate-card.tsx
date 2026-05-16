@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { CandidateArticle } from "@/lib/api/types";
+import { formatDisplayDate } from "@/lib/date";
 import { SelectButton } from "./select-button";
 
 export function CandidateCard({ candidate }: { candidate: CandidateArticle }) {
@@ -38,7 +39,7 @@ export function CandidateCard({ candidate }: { candidate: CandidateArticle }) {
             <CardDescription className="flex items-center gap-2 text-xs">
               <Badge variant="secondary">{candidate.source}</Badge>
               <span>
-                {new Date(candidate.publishedAt).toLocaleDateString()}
+                {formatDisplayDate(candidate.publishedAt)}
               </span>
               {typeof candidate.score === "number" ? (
                 <span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">

@@ -37,6 +37,7 @@ describe("ArticleSummary", () => {
     render(<ArticleSummary article={article} />);
     expect(screen.getByText("BBC")).toBeInTheDocument();
     expect(screen.getByText("TRANSLATED")).toBeInTheDocument();
+    expect(screen.getByText("2026-04-22 00:00:00")).toBeInTheDocument();
   });
 
   it("hides summary when not provided", () => {
