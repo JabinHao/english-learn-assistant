@@ -59,4 +59,43 @@ class TutorAgentServiceTest {
         assertThat(((UserMessage) capturedMessages.get(1)).singleText()).contains("Article Title: Selected article");
         assertThat(((UserMessage) capturedMessages.getLast()).singleText()).isEqualTo("解释第一段");
     }
+
+    @Test
+    void reply_shouldUseFocusedContextWhenParagraphIndexProvided() {
+        List<Integer> capturedParagraphIndexes = new ArrayList<>();
+        ChatLanguageModel model = new ChatLanguageModel() {
+            @Override
+            public ChatResponse doChat(dev.langchain4j.model.chat.request.ChatRequest chatRequest) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public ChatResponse chat(List<ChatMessage> messages) {
+                return ChatResponse.builder()
+                        .aiMessage(dev.langchain4j.data.message.AiMessage.from("这是解释"))
+                        .build();
+            }
+        };
+
+        TutorAgentService service = new TutorAgentService(
+                model,
+                new DefaultResourceLoader(),
+                new ArticleTutorContextService(null, null, null) {
+                    @Override
+                    public String buildContext(Long learningArticleId, Integer paragraphIndex) {
+                        capturedParagraphIndexes.add(paragraphIndex);
+                        return "focused context";
+                    }
+                }
+        );
+
+        service.reply(
+                88L,
+                List.of(),
+                "解释这一段",
+                new TutorAgentService.TutorRequestContext(2, null, "ASK", "EXPLAIN_PARAGRAPH")
+        );
+
+        assertThat(capturedParagraphIndexes).containsExactly(2);
+    }
 }

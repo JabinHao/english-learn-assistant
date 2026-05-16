@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { BilingualParagraphs } from "./bilingual-paragraphs";
 import type { ArticleParagraph } from "@/lib/api/types";
 
@@ -42,5 +42,16 @@ describe("BilingualParagraphs", () => {
     expect(
       screen.getByText("No translated paragraphs are available yet."),
     ).toBeInTheDocument();
+  });
+
+  it("exposes an explain action for each paragraph when configured", () => {
+    const onExplain = vi.fn();
+    render(
+      <BilingualParagraphs paragraphs={paragraphs} onExplainParagraph={onExplain} />,
+    );
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Explain" })[1]);
+
+    expect(onExplain).toHaveBeenCalledWith(paragraphs[1]);
   });
 });

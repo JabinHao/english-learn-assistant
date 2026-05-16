@@ -23,7 +23,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -56,6 +58,34 @@ class TutorChatControllerTest {
                 .andExpect(jsonPath("$.messages.length()").value(2))
                 .andExpect(jsonPath("$.messages[0].role").value("user"))
                 .andExpect(jsonPath("$.messages[1].role").value("assistant"));
+    }
+
+    @Test
+    void chat_shouldPassRequestContextToTutorService() throws Exception {
+        LearningArticleEntity article = learningArticle();
+        AtomicLong messageId = new AtomicLong(1L);
+        List<ChatMessageEntity> storedMessages = new ArrayList<>();
+        ChatSessionEntity session = new ChatSessionEntity();
+        ReflectionTestUtils.setField(session, "id", 55L);
+        session.setLearningArticle(article);
+        AtomicReference<TutorAgentService.TutorRequestContext> capturedContext = new AtomicReference<>();
+
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new TutorChatController(
+                        learningRepository(article),
+                        sessionRepository(session),
+                        messageRepository(storedMessages, messageId, session),
+                        tutorService("这是回答", capturedContext)))
+                .setMessageConverters(new MappingJackson2HttpMessageConverter())
+                .build();
+
+        mockMvc.perform(post("/api/learning-articles/88/chat")
+                        .contentType("application/json")
+                        .content("{\"message\":\"解释这一段\",\"paragraphIndex\":2,\"mode\":\"ASK\",\"intent\":\"EXPLAIN_PARAGRAPH\"}"))
+                .andExpect(status().isOk());
+
+        assertThat(capturedContext.get()).isEqualTo(
+                new TutorAgentService.TutorRequestContext(2, null, "ASK", "EXPLAIN_PARAGRAPH")
+        );
     }
 
     private LearningArticleRepository learningRepository(LearningArticleEntity article) {
@@ -111,6 +141,13 @@ class TutorChatControllerTest {
     }
 
     private TutorAgentService tutorService(String reply) {
+        return tutorService(reply, null);
+    }
+
+    private TutorAgentService tutorService(
+            String reply,
+            AtomicReference<TutorAgentService.TutorRequestContext> capturedContext
+    ) {
         ChatLanguageModel model = new ChatLanguageModel() {
             @Override
             public ChatResponse doChat(dev.langchain4j.model.chat.request.ChatRequest chatRequest) {
@@ -125,6 +162,19 @@ class TutorChatControllerTest {
         }) {
             @Override
             public String reply(Long learningArticleId, List<HistoricalChatMessage> history, String userMessage) {
+                return reply;
+            }
+
+            @Override
+            public String reply(
+                    Long learningArticleId,
+                    List<HistoricalChatMessage> history,
+                    String userMessage,
+                    TutorRequestContext requestContext
+            ) {
+                if (capturedContext != null) {
+                    capturedContext.set(requestContext);
+                }
                 return reply;
             }
         };

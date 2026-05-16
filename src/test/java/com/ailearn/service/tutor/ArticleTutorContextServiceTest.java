@@ -47,6 +47,29 @@ class ArticleTutorContextServiceTest {
         assertThat(context).contains("- reasoning [WORD] : 推理");
     }
 
+    @Test
+    void buildContext_shouldFocusOnRequestedParagraphWhenParagraphIndexProvided() {
+        LearningArticleEntity article = learningArticle();
+        ArticleParagraphEntity first = new ArticleParagraphEntity();
+        first.setParagraphIndex(1);
+        first.setEnglishText("First paragraph");
+
+        ArticleParagraphEntity second = new ArticleParagraphEntity();
+        second.setParagraphIndex(2);
+        second.setEnglishText("Second paragraph");
+
+        ArticleTutorContextService service = new ArticleTutorContextService(
+                learningRepository(article),
+                paragraphRepository(List.of(first, second)),
+                vocabularyRepository(List.of())
+        );
+
+        String context = service.buildContext(88L, 2);
+
+        assertThat(context).contains("2. EN: Second paragraph");
+        assertThat(context).doesNotContain("1. EN: First paragraph");
+    }
+
     private LearningArticleRepository learningRepository(LearningArticleEntity article) {
         return (LearningArticleRepository) Proxy.newProxyInstance(
                 LearningArticleRepository.class.getClassLoader(),

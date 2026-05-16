@@ -74,3 +74,25 @@ export interface SelectCandidateResponse {
 }
 
 export type CreateLearningArticleResponse = SelectCandidateResponse;
+
+export interface ChatMessage {
+  id: number;
+  role: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface TutorChatResponse {
+  sessionId: number;
+  learningArticleId: number;
+  reply: string;
+  messages: ChatMessage[];
+}
+
+export interface TutorChatRequest {
+  message: string;
+  paragraphIndex?: number;
+  selectedText?: string;
+  mode?: "ASK" | "QUIZ" | "REVIEW";
+  intent?: string;
+}

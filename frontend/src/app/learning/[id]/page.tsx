@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { ArticleSummary } from "@/components/learning/article-summary";
-import { BilingualParagraphs } from "@/components/learning/bilingual-paragraphs";
-import { VocabularyList } from "@/components/learning/vocabulary-list";
+import { LearningWorkspace } from "@/components/learning/learning-workspace";
 import { ApiError } from "@/lib/api/client";
 import { fetchLearningArticle } from "@/lib/api/learning";
 
@@ -31,13 +30,7 @@ export default async function LearningArticlePage({
   return (
     <div className="space-y-8">
       <ArticleSummary article={article} />
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.9fr)]">
-        <BilingualParagraphs paragraphs={article.paragraphs} />
-        <VocabularyList
-          learningArticleId={article.id}
-          items={article.vocabularyItems}
-        />
-      </div>
+      <LearningWorkspace article={article} />
     </div>
   );
 }

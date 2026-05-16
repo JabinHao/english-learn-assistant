@@ -68,7 +68,13 @@ public class TutorChatController {
                 history.stream()
                         .map(message -> new TutorAgentService.HistoricalChatMessage(message.getRole(), message.getContent()))
                         .toList(),
-                request.message()
+                request.message(),
+                new TutorAgentService.TutorRequestContext(
+                        request.paragraphIndex(),
+                        request.selectedText(),
+                        request.mode(),
+                        request.intent()
+                )
         );
 
         ChatMessageEntity assistantMessage = new ChatMessageEntity();

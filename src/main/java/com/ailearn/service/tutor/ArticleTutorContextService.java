@@ -30,6 +30,10 @@ public class ArticleTutorContextService {
     }
 
     public String buildContext(Long learningArticleId) {
+        return buildContext(learningArticleId, null);
+    }
+
+    public String buildContext(Long learningArticleId, Integer paragraphIndex) {
         LearningArticleEntity article = learningArticleRepository.findById(learningArticleId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Learning article not found"));
         List<ArticleParagraphEntity> paragraphs = articleParagraphRepository.findByLearningArticleIdOrderByParagraphIndexAsc(learningArticleId);
@@ -46,6 +50,9 @@ public class ArticleTutorContextService {
 
         builder.append("\nParagraphs:\n");
         for (ArticleParagraphEntity paragraph : paragraphs) {
+            if (paragraphIndex != null && !paragraphIndex.equals(paragraph.getParagraphIndex())) {
+                continue;
+            }
             builder.append(paragraph.getParagraphIndex())
                     .append(". EN: ").append(paragraph.getEnglishText()).append("\n");
             if (paragraph.getChineseText() != null && !paragraph.getChineseText().isBlank()) {

@@ -1,11 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { ArticleParagraph } from "@/lib/api/types";
+import { Button } from "@/components/ui/button";
 
 export function BilingualParagraphs({
   paragraphs,
+  onExplainParagraph,
 }: {
   paragraphs: ArticleParagraph[];
+  onExplainParagraph?: (paragraph: ArticleParagraph) => void;
 }) {
   if (paragraphs.length === 0) {
     return (
@@ -28,8 +31,19 @@ export function BilingualParagraphs({
       <CardContent className="space-y-5">
         {paragraphs.map((paragraph, index) => (
           <div key={`${paragraph.paragraphIndex}-${index}`} className="space-y-3">
-            <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              Paragraph {paragraph.paragraphIndex}
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Paragraph {paragraph.paragraphIndex}
+              </div>
+              {onExplainParagraph ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onExplainParagraph(paragraph)}
+                >
+                  Explain
+                </Button>
+              ) : null}
             </div>
             <div className="grid gap-3 lg:grid-cols-2">
               <div className="rounded-2xl bg-muted/40 p-4 text-sm leading-7">

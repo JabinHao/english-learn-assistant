@@ -50,7 +50,18 @@ public class TutorAgentService {
     }
 
     public String reply(Long learningArticleId, List<HistoricalChatMessage> history, String userMessage) {
-        String context = articleTutorContextService.buildContext(learningArticleId);
+        return reply(learningArticleId, history, userMessage, TutorRequestContext.empty());
+    }
+
+    public String reply(
+            Long learningArticleId,
+            List<HistoricalChatMessage> history,
+            String userMessage,
+            TutorRequestContext requestContext
+    ) {
+        String context = requestContext.paragraphIndex() == null
+                ? articleTutorContextService.buildContext(learningArticleId)
+                : articleTutorContextService.buildContext(learningArticleId, requestContext.paragraphIndex());
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(SystemMessage.from(systemPrompt));
         messages.add(UserMessage.from("Article context:\n" + context));
@@ -85,5 +96,16 @@ public class TutorAgentService {
     }
 
     public record HistoricalChatMessage(String role, String content) {
+    }
+
+    public record TutorRequestContext(
+            Integer paragraphIndex,
+            String selectedText,
+            String mode,
+            String intent
+    ) {
+        public static TutorRequestContext empty() {
+            return new TutorRequestContext(null, null, null, null);
+        }
     }
 }
