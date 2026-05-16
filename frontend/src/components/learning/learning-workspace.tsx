@@ -5,6 +5,7 @@ import { BilingualParagraphs } from "./bilingual-paragraphs";
 import { VocabularyList } from "./vocabulary-list";
 import { TutorPanel } from "@/components/tutor/tutor-panel";
 import type { LearningArticle, TutorChatRequest } from "@/lib/api/types";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export function LearningWorkspace({ article }: { article: LearningArticle }) {
   const [pendingRequest, setPendingRequest] = useState<TutorChatRequest | null>(
@@ -66,23 +67,6 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
 
   return (
     <>
-      <div className="hidden items-center justify-end gap-2 xl:flex">
-        <button
-          type="button"
-          className="rounded-lg border px-3 py-2 text-sm"
-          onClick={() => setVocabularyExpanded((current) => !current)}
-        >
-          {vocabularyExpanded ? "Collapse vocabulary" : "Expand vocabulary"}
-        </button>
-        <button
-          type="button"
-          className="rounded-lg border px-3 py-2 text-sm"
-          onClick={() => setTutorExpanded((current) => !current)}
-        >
-          {tutorExpanded ? "Collapse tutor" : "Expand tutor"}
-        </button>
-      </div>
-
       <div className="space-y-4 xl:hidden">
         <div className="grid grid-cols-3 gap-2">
           <button
@@ -112,12 +96,12 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
       <div
         className={
           vocabularyExpanded && tutorExpanded
-            ? "grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.7fr)_minmax(320px,0.8fr)]"
+            ? "grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.7fr)_minmax(320px,0.8fr)]"
             : vocabularyExpanded
-              ? "grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.7fr)]"
+              ? "grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.7fr)_40px]"
               : tutorExpanded
-                ? "grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.8fr)]"
-                : "grid gap-6"
+                ? "grid gap-6 xl:grid-cols-[minmax(0,1fr)_40px_minmax(320px,0.8fr)]"
+                : "grid gap-6 xl:grid-cols-[minmax(0,1fr)_40px_40px]"
         }
       >
         <div className={activePanel === "reading" ? "block" : "hidden xl:block"}>
@@ -128,22 +112,68 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
             activePanel === "vocabulary"
               ? "block"
               : vocabularyExpanded
-                ? "hidden xl:block"
-                : "hidden"
+                ? "hidden xl:relative xl:block"
+                : "hidden xl:block"
           }
         >
-          {vocabularyPanel}
+          {vocabularyExpanded ? (
+            <>
+              {vocabularyPanel}
+              <button
+                type="button"
+                aria-label="Collapse vocabulary"
+                className="absolute -left-3 top-6 hidden size-6 items-center justify-center rounded-full border bg-background shadow-sm xl:flex"
+                onClick={() => setVocabularyExpanded(false)}
+              >
+                <ChevronRight className="size-4" />
+              </button>
+            </>
+          ) : (
+            <div className="hidden h-full items-start justify-center pt-6 xl:flex">
+              <button
+                type="button"
+                aria-label="Expand vocabulary"
+                className="flex size-8 items-center justify-center rounded-full border bg-background shadow-sm"
+                onClick={() => setVocabularyExpanded(true)}
+              >
+                <ChevronLeft className="size-4" />
+              </button>
+            </div>
+          )}
         </div>
         <div
           className={
             activePanel === "tutor"
               ? "block"
               : tutorExpanded
-                ? "hidden xl:block"
-                : "hidden"
+                ? "hidden xl:relative xl:block"
+                : "hidden xl:block"
           }
         >
-          {tutorPanel}
+          {tutorExpanded ? (
+            <div className="xl:sticky xl:top-6">
+              {tutorPanel}
+              <button
+                type="button"
+                aria-label="Collapse tutor"
+                className="absolute -left-3 top-6 hidden size-6 items-center justify-center rounded-full border bg-background shadow-sm xl:flex"
+                onClick={() => setTutorExpanded(false)}
+              >
+                <ChevronRight className="size-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="hidden h-full items-start justify-center pt-6 xl:flex">
+              <button
+                type="button"
+                aria-label="Expand tutor"
+                className="flex size-8 items-center justify-center rounded-full border bg-background shadow-sm"
+                onClick={() => setTutorExpanded(true)}
+              >
+                <ChevronLeft className="size-4" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </>
