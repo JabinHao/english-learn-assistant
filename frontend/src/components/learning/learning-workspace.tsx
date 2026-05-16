@@ -13,6 +13,8 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
   const [activePanel, setActivePanel] = useState<"reading" | "vocabulary" | "tutor">(
     "reading",
   );
+  const [vocabularyExpanded, setVocabularyExpanded] = useState(true);
+  const [tutorExpanded, setTutorExpanded] = useState(true);
 
   const readingPanel = (
     <BilingualParagraphs
@@ -64,6 +66,23 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
 
   return (
     <>
+      <div className="hidden items-center justify-end gap-2 xl:flex">
+        <button
+          type="button"
+          className="rounded-lg border px-3 py-2 text-sm"
+          onClick={() => setVocabularyExpanded((current) => !current)}
+        >
+          {vocabularyExpanded ? "Collapse vocabulary" : "Expand vocabulary"}
+        </button>
+        <button
+          type="button"
+          className="rounded-lg border px-3 py-2 text-sm"
+          onClick={() => setTutorExpanded((current) => !current)}
+        >
+          {tutorExpanded ? "Collapse tutor" : "Expand tutor"}
+        </button>
+      </div>
+
       <div className="space-y-4 xl:hidden">
         <div className="grid grid-cols-3 gap-2">
           <button
@@ -90,14 +109,40 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.7fr)_minmax(320px,0.8fr)]">
+      <div
+        className={
+          vocabularyExpanded && tutorExpanded
+            ? "grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.7fr)_minmax(320px,0.8fr)]"
+            : vocabularyExpanded
+              ? "grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.7fr)]"
+              : tutorExpanded
+                ? "grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.8fr)]"
+                : "grid gap-6"
+        }
+      >
         <div className={activePanel === "reading" ? "block" : "hidden xl:block"}>
           {readingPanel}
         </div>
-        <div className={activePanel === "vocabulary" ? "block" : "hidden xl:block"}>
+        <div
+          className={
+            activePanel === "vocabulary"
+              ? "block"
+              : vocabularyExpanded
+                ? "hidden xl:block"
+                : "hidden"
+          }
+        >
           {vocabularyPanel}
         </div>
-        <div className={activePanel === "tutor" ? "block" : "hidden xl:block"}>
+        <div
+          className={
+            activePanel === "tutor"
+              ? "block"
+              : tutorExpanded
+                ? "hidden xl:block"
+                : "hidden"
+          }
+        >
           {tutorPanel}
         </div>
       </div>

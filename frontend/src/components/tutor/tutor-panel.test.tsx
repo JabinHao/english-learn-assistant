@@ -106,4 +106,26 @@ describe("TutorPanel", () => {
     expect(await screen.findByText("Backend timeout")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
   });
+
+  it("starts a quiz from the quiz tab", async () => {
+    loadChatHistory.mockRejectedValue(new Error("Chat session not found"));
+    sendChatMessage.mockResolvedValue({
+      sessionId: 1,
+      learningArticleId: 88,
+      reply: "Question 1",
+      messages: [],
+    });
+
+    render(<TutorPanel learningArticleId={88} />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Quiz" }));
+
+    await waitFor(() => {
+      expect(sendChatMessage).toHaveBeenCalledWith(88, {
+        message: "Quiz me on this article. Ask one question at a time.",
+        mode: "QUIZ",
+        intent: "GENERATE_QUIZ",
+      });
+    });
+  });
 });

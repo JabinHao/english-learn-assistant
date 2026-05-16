@@ -112,6 +112,14 @@ export function TutorPanel({
     });
   }
 
+  function handleQuizStart() {
+    void handleSend({
+      message: "Quiz me on this article. Ask one question at a time.",
+      mode: "QUIZ",
+      intent: "GENERATE_QUIZ",
+    });
+  }
+
   return (
     <Card className="border border-foreground/10">
       <CardHeader className="space-y-3">
@@ -121,7 +129,7 @@ export function TutorPanel({
         </div>
         <div className="flex gap-2">
           <Button size="sm">Ask</Button>
-          <Button size="sm" variant="outline" disabled>
+          <Button size="sm" variant="outline" disabled={sending} onClick={handleQuizStart}>
             Quiz
           </Button>
           <Button size="sm" variant="outline" disabled>

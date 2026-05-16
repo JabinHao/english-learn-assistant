@@ -97,4 +97,30 @@ describe("LearningWorkspace", () => {
       }),
     );
   });
+
+  it("can collapse vocabulary and tutor panels for focused reading", () => {
+    render(
+      <LearningWorkspace
+        article={{
+          id: 88,
+          candidateArticleId: 1,
+          status: "VOCAB_READY",
+          title: "Article",
+          url: "https://example.com",
+          source: "Example",
+          publishedAt: "2026-05-16T10:00:00",
+          articleContent: "Article body",
+          summary: "Summary",
+          paragraphs: [],
+          vocabularyItems: [],
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse vocabulary" }));
+    fireEvent.click(screen.getByRole("button", { name: "Collapse tutor" }));
+
+    expect(screen.getByRole("button", { name: "Expand vocabulary" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Expand tutor" })).toBeInTheDocument();
+  });
 });
