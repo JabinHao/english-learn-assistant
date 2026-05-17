@@ -106,7 +106,8 @@ class TutorChatControllerTest {
                 ChatSessionRepository.class.getClassLoader(),
                 new Class[]{ChatSessionRepository.class},
                 (proxy, method, args) -> switch (method.getName()) {
-                    case "findFirstByLearningArticleIdOrderByCreatedAtAsc" -> Optional.of(session);
+                    case "findFirstByLearningArticleIdOrderByCreatedAtAsc",
+                         "findFirstByLearningArticleIdOrderByCreatedAtDesc" -> Optional.of(session);
                     case "save" -> args[0];
                     case "hashCode" -> System.identityHashCode(proxy);
                     case "equals" -> proxy == args[0];

@@ -10,5 +10,11 @@ public interface ChatSessionRepository extends JpaRepository<ChatSessionEntity, 
 
     Optional<ChatSessionEntity> findFirstByLearningArticleIdOrderByCreatedAtAsc(Long learningArticleId);
 
+    Optional<ChatSessionEntity> findFirstByLearningArticleIdOrderByCreatedAtDesc(Long learningArticleId);
+
+    Optional<ChatSessionEntity> findByIdAndLearningArticleId(Long id, Long learningArticleId);
+
     List<ChatSessionEntity> findByLearningArticleIdOrderByCreatedAtAsc(Long learningArticleId);
+
+    List<ChatSessionEntity> findByLearningArticleIdOrderByCreatedAtDesc(Long learningArticleId);
 }

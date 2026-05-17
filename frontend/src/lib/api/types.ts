@@ -96,3 +96,12 @@ export interface TutorChatRequest {
   mode?: "ASK" | "QUIZ" | "REVIEW";
   intent?: string;
 }
+
+export interface ChatSessionSummary {
+  id: number;
+  learningArticleId: number;
+  title: string | null;
+  createdAt: string;
+  messageCount: number;
+  lastMessageAt: string | null;
+}

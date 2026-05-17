@@ -80,7 +80,8 @@ class TutorChatHistoryControllerTest {
                 ChatSessionRepository.class.getClassLoader(),
                 new Class[]{ChatSessionRepository.class},
                 (proxy, method, args) -> switch (method.getName()) {
-                    case "findFirstByLearningArticleIdOrderByCreatedAtAsc" -> Optional.of(session);
+                    case "findFirstByLearningArticleIdOrderByCreatedAtAsc",
+                         "findFirstByLearningArticleIdOrderByCreatedAtDesc" -> Optional.of(session);
                     case "hashCode" -> System.identityHashCode(proxy);
                     case "equals" -> proxy == args[0];
                     default -> throw new UnsupportedOperationException(method.getName());

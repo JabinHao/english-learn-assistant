@@ -23,6 +23,9 @@ public class ChatSessionEntity {
     @JoinColumn(name = "learning_article_id", nullable = false)
     private LearningArticleEntity learningArticle;
 
+    @Column
+    private String title;
+
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -36,6 +39,14 @@ public class ChatSessionEntity {
 
     public void setLearningArticle(LearningArticleEntity learningArticle) {
         this.learningArticle = learningArticle;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public LocalDateTime getCreatedAt() {
