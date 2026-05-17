@@ -21,6 +21,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,6 +36,7 @@ class LearningWorkflowServiceTest {
         AtomicReference<LearningArticleEntity> savedArticle = new AtomicReference<>();
         AtomicReference<List<ArticleParagraphEntity>> savedParagraphs = new AtomicReference<>(List.of());
         AtomicReference<List<VocabularyItemEntity>> savedVocabulary = new AtomicReference<>(List.of());
+        AtomicBoolean exported = new AtomicBoolean(false);
 
         LearningWorkflowService service = new LearningWorkflowService(
                 learningArticleRepository(article, savedArticle),
@@ -60,6 +62,17 @@ class LearningWorkflowServiceTest {
                 paragraphRepository(savedParagraphs),
                 vocabularyRepository(savedVocabulary),
                 new EudicClient(null),
+                new LearningArticleExportService() {
+                    @Override
+                    public java.nio.file.Path export(
+                            LearningArticleEntity article,
+                            List<ArticleParagraphEntity> paragraphs,
+                            List<VocabularyItemEntity> vocabularyItems
+                    ) {
+                        exported.set(true);
+                        return java.nio.file.Path.of("data/exports/articles/88-selected-article.html");
+                    }
+                },
                 clock
         );
 
@@ -73,6 +86,54 @@ class LearningWorkflowServiceTest {
         assertThat(result.getTranslatedAt()).isEqualTo(LocalDateTime.of(2026, 4, 26, 1, 0));
         assertThat(result.getVocabularyExtractedAt()).isEqualTo(LocalDateTime.of(2026, 4, 26, 1, 0));
         assertThat(result.getEudicPushedAt()).isNull();
+        assertThat(exported).isTrue();
+    }
+
+    @Test
+    void processLearningArticle_shouldRemainVocabReadyWhenStaticExportFails() {
+        Clock clock = Clock.fixed(Instant.parse("2026-04-26T01:00:00Z"), ZoneOffset.UTC);
+        LearningArticleEntity article = learningArticle(88L, 7L);
+
+        LearningWorkflowService service = new LearningWorkflowService(
+                learningArticleRepository(article, new AtomicReference<>()),
+                new ArticleContentService() {
+                    @Override
+                    public String fetchArticleContent(String url) {
+                        return "Paragraph one.";
+                    }
+                },
+                new ParagraphSplitService(),
+                new TranslationService(null, prompt -> "", "") {
+                    @Override
+                    public List<String> translate(List<String> paragraphs) {
+                        return List.of("第一段。");
+                    }
+                },
+                new VocabularyExtractionService(null, prompt -> "", "") {
+                    @Override
+                    public List<VocabularyCandidate> extract(List<String> paragraphs) {
+                        return List.of();
+                    }
+                },
+                paragraphRepository(new AtomicReference<>(List.of())),
+                vocabularyRepository(new AtomicReference<>(List.of())),
+                new EudicClient(null),
+                new LearningArticleExportService() {
+                    @Override
+                    public java.nio.file.Path export(
+                            LearningArticleEntity article,
+                            List<ArticleParagraphEntity> paragraphs,
+                            List<VocabularyItemEntity> vocabularyItems
+                    ) throws java.io.IOException {
+                        throw new java.io.IOException("disk full");
+                    }
+                },
+                clock
+        );
+
+        LearningArticleEntity result = service.processLearningArticle(88L);
+
+        assertThat(result.getStatus()).isEqualTo("VOCAB_READY");
     }
 
     @Test
@@ -99,6 +160,7 @@ class LearningWorkflowServiceTest {
                         throw new IllegalStateException("Eudic category response is invalid");
                     }
                 },
+                null,
                 clock
         );
 

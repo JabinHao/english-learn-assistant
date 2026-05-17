@@ -105,7 +105,7 @@ class LearningArticleControllerTest {
         vocabularyItem.setChineseDefinition("推理");
         vocabularyItem.setEudicPushed(true);
 
-        LearningWorkflowService workflowService = new LearningWorkflowService(null, null, null, null, null, null, null, null, java.time.Clock.systemUTC()) {
+        LearningWorkflowService workflowService = new LearningWorkflowService(null, null, null, null, null, null, null, null, null, java.time.Clock.systemUTC()) {
             @Override
             public VocabularyItemEntity pushVocabularyItem(Long learningArticleId, Long vocabularyItemId) {
                 return vocabularyItem;
@@ -139,7 +139,7 @@ class LearningArticleControllerTest {
         vocabularyItem.setChineseDefinition("推理");
         vocabularyItem.setEudicPushed(false);
 
-        LearningWorkflowService workflowService = new LearningWorkflowService(null, null, null, null, null, null, null, null, java.time.Clock.systemUTC()) {
+        LearningWorkflowService workflowService = new LearningWorkflowService(null, null, null, null, null, null, null, null, null, java.time.Clock.systemUTC()) {
             @Override
             public VocabularyItemEntity removeVocabularyItem(Long learningArticleId, Long vocabularyItemId) {
                 return vocabularyItem;
@@ -222,7 +222,7 @@ class LearningArticleControllerTest {
     }
 
     private LearningWorkflowService workflowService() {
-        return new LearningWorkflowService(null, null, null, null, null, null, null, null, java.time.Clock.systemUTC()) {
+        return new LearningWorkflowService(null, null, null, null, null, null, null, null, null, java.time.Clock.systemUTC()) {
         };
     }
 }

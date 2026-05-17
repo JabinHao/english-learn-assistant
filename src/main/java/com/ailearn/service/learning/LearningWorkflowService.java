@@ -39,6 +39,7 @@ public class LearningWorkflowService {
     private final ArticleParagraphRepository articleParagraphRepository;
     private final VocabularyItemRepository vocabularyItemRepository;
     private final EudicClient eudicClient;
+    private final LearningArticleExportService learningArticleExportService;
     private final Clock clock;
 
     public LearningWorkflowService(
@@ -50,6 +51,7 @@ public class LearningWorkflowService {
             ArticleParagraphRepository articleParagraphRepository,
             VocabularyItemRepository vocabularyItemRepository,
             EudicClient eudicClient,
+            LearningArticleExportService learningArticleExportService,
             Clock clock
     ) {
         this.learningArticleRepository = learningArticleRepository;
@@ -60,6 +62,7 @@ public class LearningWorkflowService {
         this.articleParagraphRepository = articleParagraphRepository;
         this.vocabularyItemRepository = vocabularyItemRepository;
         this.eudicClient = eudicClient;
+        this.learningArticleExportService = learningArticleExportService;
         this.clock = clock;
     }
 
@@ -80,7 +83,9 @@ public class LearningWorkflowService {
             log.info("learning.workflow.translated learningArticleId={} paragraphCount={}", learningArticleId, paragraphs.size());
 
             articleParagraphRepository.deleteByLearningArticleId(learningArticleId);
-            articleParagraphRepository.saveAll(toParagraphEntities(learningArticle, paragraphs, translations));
+            List<ArticleParagraphEntity> paragraphEntities = articleParagraphRepository.saveAll(
+                    toParagraphEntities(learningArticle, paragraphs, translations)
+            );
 
             learningArticle.setStatus(STATUS_TRANSLATED);
             learningArticle.setTranslatedAt(LocalDateTime.now(clock));
@@ -94,6 +99,18 @@ public class LearningWorkflowService {
             learningArticle.setStatus(STATUS_VOCAB_READY);
             learningArticle.setVocabularyExtractedAt(LocalDateTime.now(clock));
             learningArticleRepository.save(learningArticle);
+
+            try {
+                if (learningArticleExportService != null) {
+                    learningArticleExportService.export(
+                            learningArticle,
+                            paragraphEntities,
+                            items
+                    );
+                }
+            } catch (Exception exception) {
+                log.warn("learning.export.failed learningArticleId={} error={}", learningArticleId, exception.getMessage(), exception);
+            }
 
             log.info("learning.workflow.completed learningArticleId={} status={}", learningArticleId, learningArticle.getStatus());
             return learningArticleRepository.save(learningArticle);
