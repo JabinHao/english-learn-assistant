@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { MessageSquareText, SendHorizontal } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Bot, MessageSquareText, SendHorizontal, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { loadChatHistory, sendChatMessage } from "@/lib/api/chat";
 import type { ChatMessage, TutorChatRequest } from "@/lib/api/types";
 
@@ -44,6 +43,8 @@ export function TutorPanel({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [lastFailedRequest, setLastFailedRequest] =
     useState<TutorChatRequest | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -79,9 +80,27 @@ export function TutorPanel({
 
     void handleSend(pendingRequest);
     onPendingRequestHandled?.();
-    // pendingRequest is intentionally treated as an edge-triggered action.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingRequest]);
+
+  useEffect(() => {
+    if (!scrollRef.current) {
+      return;
+    }
+    scrollRef.current.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [messages, sending]);
+
+  function autosizeTextarea() {
+    const node = textareaRef.current;
+    if (!node) {
+      return;
+    }
+    node.style.height = "auto";
+    node.style.height = `${Math.min(node.scrollHeight, 160)}px`;
+  }
 
   async function handleSend(request: TutorChatRequest) {
     setSending(true);
@@ -91,6 +110,7 @@ export function TutorPanel({
       const response = await sendChatMessage(learningArticleId, request);
       setMessages(response.messages);
       setInput("");
+      requestAnimationFrame(autosizeTextarea);
     } catch (error) {
       setLastFailedRequest(request);
       setErrorMessage(error instanceof Error ? error.message : "Failed to send message");
@@ -120,35 +140,51 @@ export function TutorPanel({
     });
   }
 
+  function handleKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+      event.preventDefault();
+      handleSubmit();
+    }
+  }
+
   return (
-    <Card className="border border-foreground/10">
-      <CardHeader className="space-y-3">
+    <div className="flex h-[calc(100vh-6.5rem)] flex-col overflow-hidden rounded-2xl border border-foreground/10 bg-card">
+      <header className="flex items-center justify-between gap-2 border-b border-foreground/10 px-3 py-2.5">
         <div className="flex items-center gap-2">
           <MessageSquareText className="size-4" />
-          <CardTitle className="text-lg">Tutor</CardTitle>
+          <span className="text-sm font-medium">Tutor</span>
         </div>
-        <div className="flex gap-2">
-          <Button size="sm">Ask</Button>
-          <Button size="sm" variant="outline" disabled={sending} onClick={handleQuizStart}>
+        <div className="flex gap-1">
+          <Button size="xs" variant="outline" disabled={sending} onClick={handleQuizStart}>
             Quiz
           </Button>
-          <Button size="sm" variant="outline" disabled>
+          <Button size="xs" variant="outline" disabled>
             Review
           </Button>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
+      </header>
+
+      <div
+        ref={scrollRef}
+        className="flex-1 space-y-3 overflow-y-auto px-3 py-3"
+        aria-label="Chat messages"
+      >
         {loadingHistory ? (
           <p className="text-sm text-muted-foreground">Loading chat history...</p>
         ) : messages.length === 0 ? (
           <div className="space-y-3">
-            <div>
-              <p className="font-medium">Ask your tutor</p>
-              <p className="text-sm text-muted-foreground">
-                Ask about the article while you read.
-              </p>
+            <div className="flex items-start gap-2">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <Sparkles className="size-3.5" />
+              </div>
+              <div className="rounded-2xl rounded-tl-sm bg-muted/60 px-3 py-2 text-sm leading-6">
+                <p className="font-medium">Ask your tutor</p>
+                <p className="text-muted-foreground">
+                  Ask about the article while you read.
+                </p>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 pl-9">
               {quickActions.map((action) => (
                 <Button
                   key={action.label}
@@ -163,21 +199,46 @@ export function TutorPanel({
             </div>
           </div>
         ) : (
-          <div className="space-y-3">
-            {messages.map((message) => (
+          messages.map((message) => {
+            const isUser = message.role !== "assistant";
+            return (
               <div
                 key={message.id}
-                className={
-                  message.role === "assistant"
-                    ? "rounded-2xl bg-muted/60 p-3 text-sm leading-6"
-                    : "rounded-2xl bg-primary/10 p-3 text-sm leading-6"
-                }
+                className={isUser ? "flex justify-end" : "flex items-start gap-2"}
               >
-                {message.content}
+                {!isUser ? (
+                  <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <Bot className="size-3.5" />
+                  </div>
+                ) : null}
+                <div
+                  className={
+                    isUser
+                      ? "max-w-[85%] rounded-2xl rounded-tr-sm bg-primary px-3 py-2 text-sm leading-6 text-primary-foreground whitespace-pre-wrap"
+                      : "max-w-[85%] rounded-2xl rounded-tl-sm bg-muted/60 px-3 py-2 text-sm leading-6 whitespace-pre-wrap"
+                  }
+                >
+                  {message.content}
+                </div>
               </div>
-            ))}
-          </div>
+            );
+          })
         )}
+
+        {sending ? (
+          <div className="flex items-start gap-2" aria-label="Tutor is typing">
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Bot className="size-3.5" />
+            </div>
+            <div className="rounded-2xl rounded-tl-sm bg-muted/60 px-3 py-2.5 text-sm leading-6">
+              <span className="inline-flex gap-1">
+                <span className="size-1.5 animate-bounce rounded-full bg-foreground/40 [animation-delay:-0.3s]" />
+                <span className="size-1.5 animate-bounce rounded-full bg-foreground/40 [animation-delay:-0.15s]" />
+                <span className="size-1.5 animate-bounce rounded-full bg-foreground/40" />
+              </span>
+            </div>
+          </div>
+        ) : null}
 
         {errorMessage ? (
           <div className="space-y-2 rounded-2xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
@@ -193,22 +254,36 @@ export function TutorPanel({
             ) : null}
           </div>
         ) : null}
+      </div>
 
-        <div className="space-y-2">
+      <div className="border-t border-foreground/10 bg-card p-2.5">
+        <div className="relative">
           <textarea
-            className="min-h-24 w-full resize-none rounded-2xl border border-foreground/10 bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            ref={textareaRef}
+            rows={1}
+            className="w-full resize-none rounded-2xl border border-foreground/10 bg-background py-2 pr-11 pl-3 text-sm leading-6 outline-none focus:border-primary"
             placeholder="Ask about this article..."
             value={input}
-            onChange={(event) => setInput(event.target.value)}
+            onChange={(event) => {
+              setInput(event.target.value);
+              autosizeTextarea();
+            }}
+            onKeyDown={handleKeyDown}
           />
-          <div className="flex justify-end">
-            <Button disabled={sending} onClick={handleSubmit}>
-              <SendHorizontal />
-              Send
-            </Button>
-          </div>
+          <Button
+            size="icon-sm"
+            className="absolute right-1.5 bottom-1.5"
+            disabled={sending || !input.trim()}
+            onClick={handleSubmit}
+            aria-label="Send"
+          >
+            <SendHorizontal />
+          </Button>
         </div>
-      </CardContent>
-    </Card>
+        <p className="mt-1 px-1 text-[10px] text-muted-foreground">
+          Enter to send · Shift+Enter for newline
+        </p>
+      </div>
+    </div>
   );
 }

@@ -17,7 +17,7 @@ describe("TutorPanel", () => {
   });
 
   it("renders quick actions when no history exists", async () => {
-    loadChatHistory.mockRejectedValue(new Error("Chat session not found"));
+    loadChatHistory.mockRejectedValue(new Error("not found"));
 
     render(<TutorPanel learningArticleId={88} />);
 
@@ -28,22 +28,12 @@ describe("TutorPanel", () => {
 
   it("renders loaded history", async () => {
     loadChatHistory.mockResolvedValue({
-      sessionId: 1,
+      sessionId: 12,
       learningArticleId: 88,
       reply: "这是回答",
       messages: [
-        {
-          id: 1,
-          role: "user",
-          content: "请总结",
-          createdAt: "2026-05-16T10:00:00",
-        },
-        {
-          id: 2,
-          role: "assistant",
-          content: "这是回答",
-          createdAt: "2026-05-16T10:00:01",
-        },
+        { id: 1, role: "user", content: "请总结", createdAt: "2026-05-16T10:00:00" },
+        { id: 2, role: "assistant", content: "这是回答", createdAt: "2026-05-16T10:00:01" },
       ],
     });
 
@@ -54,32 +44,26 @@ describe("TutorPanel", () => {
   });
 
   it("sends a free-form question", async () => {
-    loadChatHistory.mockRejectedValue(new Error("Chat session not found"));
+    loadChatHistory.mockResolvedValue({
+      sessionId: 12,
+      learningArticleId: 88,
+      reply: "",
+      messages: [],
+    });
     sendChatMessage.mockResolvedValue({
-      sessionId: 1,
+      sessionId: 12,
       learningArticleId: 88,
       reply: "这是解释",
       messages: [
-        {
-          id: 1,
-          role: "user",
-          content: "解释这篇文章",
-          createdAt: "2026-05-16T10:00:00",
-        },
-        {
-          id: 2,
-          role: "assistant",
-          content: "这是解释",
-          createdAt: "2026-05-16T10:00:01",
-        },
+        { id: 1, role: "user", content: "解释这篇文章", createdAt: "2026-05-16T10:00:00" },
+        { id: 2, role: "assistant", content: "这是解释", createdAt: "2026-05-16T10:00:01" },
       ],
     });
 
     render(<TutorPanel learningArticleId={88} />);
 
-    fireEvent.change(await screen.findByPlaceholderText("Ask about this article..."), {
-      target: { value: "解释这篇文章" },
-    });
+    const textarea = await screen.findByPlaceholderText("Ask about this article...");
+    fireEvent.change(textarea, { target: { value: "解释这篇文章" } });
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
 
     await waitFor(() => {
@@ -92,8 +76,44 @@ describe("TutorPanel", () => {
     expect(await screen.findByText("这是解释")).toBeInTheDocument();
   });
 
+  it("sends on Enter and not on Shift+Enter", async () => {
+    loadChatHistory.mockResolvedValue({
+      sessionId: 12,
+      learningArticleId: 88,
+      reply: "",
+      messages: [],
+    });
+    sendChatMessage.mockResolvedValue({
+      sessionId: 12,
+      learningArticleId: 88,
+      reply: "ok",
+      messages: [],
+    });
+
+    render(<TutorPanel learningArticleId={88} />);
+    const textarea = await screen.findByPlaceholderText("Ask about this article...");
+
+    fireEvent.change(textarea, { target: { value: "hello" } });
+    fireEvent.keyDown(textarea, { key: "Enter", shiftKey: true });
+    expect(sendChatMessage).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(textarea, { key: "Enter" });
+    await waitFor(() => {
+      expect(sendChatMessage).toHaveBeenCalledWith(88, {
+        message: "hello",
+        mode: "ASK",
+        intent: "FREEFORM",
+      });
+    });
+  });
+
   it("shows a retryable error when send fails", async () => {
-    loadChatHistory.mockRejectedValue(new Error("Chat session not found"));
+    loadChatHistory.mockResolvedValue({
+      sessionId: 12,
+      learningArticleId: 88,
+      reply: "",
+      messages: [],
+    });
     sendChatMessage.mockRejectedValue(new Error("Backend timeout"));
 
     render(<TutorPanel learningArticleId={88} />);
@@ -107,10 +127,15 @@ describe("TutorPanel", () => {
     expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
   });
 
-  it("starts a quiz from the quiz tab", async () => {
-    loadChatHistory.mockRejectedValue(new Error("Chat session not found"));
+  it("starts a quiz from the quiz button", async () => {
+    loadChatHistory.mockResolvedValue({
+      sessionId: 12,
+      learningArticleId: 88,
+      reply: "",
+      messages: [],
+    });
     sendChatMessage.mockResolvedValue({
-      sessionId: 1,
+      sessionId: 12,
       learningArticleId: 88,
       reply: "Question 1",
       messages: [],
