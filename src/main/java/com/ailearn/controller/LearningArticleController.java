@@ -103,6 +103,12 @@ public class LearningArticleController {
         return toVocabularyResponse(item);
     }
 
+    @DeleteMapping("/{learningArticleId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteLearningArticle(@PathVariable Long learningArticleId) {
+        learningWorkflowService.deleteLearningArticle(learningArticleId);
+    }
+
     private LearningArticleResponse.VocabularyItemResponse toVocabularyResponse(VocabularyItemEntity item) {
         return new LearningArticleResponse.VocabularyItemResponse(
                                 item.getId(),

@@ -36,6 +36,10 @@ public class LearningArticleExportService {
         return destination;
     }
 
+    public void deleteExport(LearningArticleEntity article) throws IOException {
+        Files.deleteIfExists(exportDirectory.resolve(fileName(article)));
+    }
+
     private String fileName(LearningArticleEntity article) {
         return article.getId() + "-" + slug(article.getTitle()) + ".html";
     }

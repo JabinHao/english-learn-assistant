@@ -18,6 +18,10 @@ export function fetchLearningArticle(id: number): Promise<LearningArticle> {
   return apiFetch<LearningArticle>(`/api/learning-articles/${id}`);
 }
 
+export function deleteLearningArticle(id: number): Promise<void> {
+  return apiFetch<void>(`/api/learning-articles/${id}`, { method: "DELETE" });
+}
+
 export function pushVocabularyItem(
   learningArticleId: number,
   vocabularyItemId: number,

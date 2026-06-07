@@ -7,6 +7,7 @@ import com.ailearn.entity.LearningArticleEntity;
 import com.ailearn.entity.VocabularyItemEntity;
 import com.ailearn.model.VocabularyCandidate;
 import com.ailearn.repository.ArticleParagraphRepository;
+import com.ailearn.repository.CandidateArticleRepository;
 import com.ailearn.repository.LearningArticleRepository;
 import com.ailearn.repository.VocabularyItemRepository;
 import org.junit.jupiter.api.Test;
@@ -62,6 +63,7 @@ class LearningWorkflowServiceTest {
                 paragraphRepository(savedParagraphs),
                 vocabularyRepository(savedVocabulary),
                 new EudicClient(null),
+                null,
                 new LearningArticleExportService() {
                     @Override
                     public java.nio.file.Path export(
@@ -118,6 +120,7 @@ class LearningWorkflowServiceTest {
                 paragraphRepository(new AtomicReference<>(List.of())),
                 vocabularyRepository(new AtomicReference<>(List.of())),
                 new EudicClient(null),
+                null,
                 new LearningArticleExportService() {
                     @Override
                     public java.nio.file.Path export(
@@ -161,6 +164,7 @@ class LearningWorkflowServiceTest {
                     }
                 },
                 null,
+                null,
                 clock
         );
 
@@ -168,6 +172,34 @@ class LearningWorkflowServiceTest {
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(exception -> assertThat(((ResponseStatusException) exception).getStatusCode().value()).isEqualTo(502))
                 .hasMessageContaining("Failed to sync vocabulary item to Eudic");
+    }
+
+    @Test
+    void deleteLearningArticle_shouldDeleteArticleAndClearCandidateSelection() {
+        LearningArticleEntity article = learningArticle(88L, 7L);
+        article.getCandidateArticle().setSelected(true);
+        AtomicReference<LearningArticleEntity> deletedArticle = new AtomicReference<>();
+        AtomicReference<CandidateArticleEntity> savedCandidate = new AtomicReference<>();
+
+        LearningWorkflowService service = new LearningWorkflowService(
+                learningArticleRepository(article, new AtomicReference<>(), deletedArticle),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                new EudicClient(null),
+                candidateArticleRepository(savedCandidate),
+                null,
+                java.time.Clock.systemUTC()
+        );
+
+        service.deleteLearningArticle(88L);
+
+        assertThat(deletedArticle.get()).isSameAs(article);
+        assertThat(savedCandidate.get()).isSameAs(article.getCandidateArticle());
+        assertThat(savedCandidate.get().isSelected()).isFalse();
     }
 
     private LearningArticleRepository learningArticleRepository(
@@ -187,6 +219,51 @@ class LearningWorkflowServiceTest {
                     case "hashCode" -> System.identityHashCode(proxy);
                     case "equals" -> proxy == args[0];
                     case "toString" -> "LearningArticleRepositoryProxy";
+                    default -> throw new UnsupportedOperationException(method.getName());
+                }
+        );
+    }
+
+    private LearningArticleRepository learningArticleRepository(
+            LearningArticleEntity article,
+            AtomicReference<LearningArticleEntity> savedArticle,
+            AtomicReference<LearningArticleEntity> deletedArticle
+    ) {
+        return (LearningArticleRepository) Proxy.newProxyInstance(
+                LearningArticleRepository.class.getClassLoader(),
+                new Class[]{LearningArticleRepository.class},
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "findById" -> Optional.of(article);
+                    case "save" -> {
+                        LearningArticleEntity value = (LearningArticleEntity) args[0];
+                        savedArticle.set(value);
+                        yield value;
+                    }
+                    case "delete" -> {
+                        deletedArticle.set((LearningArticleEntity) args[0]);
+                        yield null;
+                    }
+                    case "hashCode" -> System.identityHashCode(proxy);
+                    case "equals" -> proxy == args[0];
+                    case "toString" -> "LearningArticleRepositoryProxy";
+                    default -> throw new UnsupportedOperationException(method.getName());
+                }
+        );
+    }
+
+    private CandidateArticleRepository candidateArticleRepository(AtomicReference<CandidateArticleEntity> savedCandidate) {
+        return (CandidateArticleRepository) Proxy.newProxyInstance(
+                CandidateArticleRepository.class.getClassLoader(),
+                new Class[]{CandidateArticleRepository.class},
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "save" -> {
+                        CandidateArticleEntity value = (CandidateArticleEntity) args[0];
+                        savedCandidate.set(value);
+                        yield value;
+                    }
+                    case "hashCode" -> System.identityHashCode(proxy);
+                    case "equals" -> proxy == args[0];
+                    case "toString" -> "CandidateArticleRepositoryProxy";
                     default -> throw new UnsupportedOperationException(method.getName());
                 }
         );

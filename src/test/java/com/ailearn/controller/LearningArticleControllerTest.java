@@ -105,7 +105,7 @@ class LearningArticleControllerTest {
         vocabularyItem.setChineseDefinition("推理");
         vocabularyItem.setEudicPushed(true);
 
-        LearningWorkflowService workflowService = new LearningWorkflowService(null, null, null, null, null, null, null, null, null, java.time.Clock.systemUTC()) {
+        LearningWorkflowService workflowService = new LearningWorkflowService(null, null, null, null, null, null, null, null, null, null, java.time.Clock.systemUTC()) {
             @Override
             public VocabularyItemEntity pushVocabularyItem(Long learningArticleId, Long vocabularyItemId) {
                 return vocabularyItem;
@@ -139,7 +139,7 @@ class LearningArticleControllerTest {
         vocabularyItem.setChineseDefinition("推理");
         vocabularyItem.setEudicPushed(false);
 
-        LearningWorkflowService workflowService = new LearningWorkflowService(null, null, null, null, null, null, null, null, null, java.time.Clock.systemUTC()) {
+        LearningWorkflowService workflowService = new LearningWorkflowService(null, null, null, null, null, null, null, null, null, null, java.time.Clock.systemUTC()) {
             @Override
             public VocabularyItemEntity removeVocabularyItem(Long learningArticleId, Long vocabularyItemId) {
                 return vocabularyItem;
@@ -160,6 +160,27 @@ class LearningArticleControllerTest {
                 .andExpect(jsonPath("$.id").value(5))
                 .andExpect(jsonPath("$.word").value("reasoning"))
                 .andExpect(jsonPath("$.eudicPushed").value(false));
+    }
+
+    @Test
+    void deleteLearningArticle_shouldReturnNoContent() throws Exception {
+        LearningWorkflowService workflowService = new LearningWorkflowService(null, null, null, null, null, null, null, null, null, null, java.time.Clock.systemUTC()) {
+            @Override
+            public void deleteLearningArticle(Long learningArticleId) {
+            }
+        };
+
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(new LearningArticleController(
+                        learningRepository(learningArticle()),
+                        paragraphRepository(List.of()),
+                        vocabularyRepository(List.of()),
+                        workflowService,
+                        null))
+                .setMessageConverters(new MappingJackson2HttpMessageConverter())
+                .build();
+
+        mockMvc.perform(delete("/api/learning-articles/88"))
+                .andExpect(status().isNoContent());
     }
 
     private LearningArticleRepository learningRepository(LearningArticleEntity article) {
@@ -222,7 +243,7 @@ class LearningArticleControllerTest {
     }
 
     private LearningWorkflowService workflowService() {
-        return new LearningWorkflowService(null, null, null, null, null, null, null, null, null, java.time.Clock.systemUTC()) {
+        return new LearningWorkflowService(null, null, null, null, null, null, null, null, null, null, java.time.Clock.systemUTC()) {
         };
     }
 }

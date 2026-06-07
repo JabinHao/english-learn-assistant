@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DeleteLearningArticleButton } from "@/components/learning/delete-learning-article-button";
 import type { LearningHistoryItem } from "@/lib/api/types";
 import { formatDisplayDate } from "@/lib/date";
 
@@ -28,10 +29,13 @@ export function HistoryList({ items }: { items: LearningHistoryItem[] }) {
               </Link>
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-            <span>{item.source}</span>
-            <span>{formatDisplayDate(item.publishedAt)}</span>
-            <span>{item.status}</span>
+          <CardContent className="flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground">
+            <div className="flex flex-wrap gap-4">
+              <span>{item.source}</span>
+              <span>{formatDisplayDate(item.publishedAt)}</span>
+              <span>{item.status}</span>
+            </div>
+            <DeleteLearningArticleButton learningArticleId={item.id} />
           </CardContent>
         </Card>
       ))}

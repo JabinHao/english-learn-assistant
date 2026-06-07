@@ -84,7 +84,7 @@ class CandidateControllerTest {
     }
 
     private LearningWorkflowService workflowService() {
-        return new LearningWorkflowService(null, null, null, null, null, null, null, null, null, Clock.systemUTC()) {
+        return new LearningWorkflowService(null, null, null, null, null, null, null, null, null, null, Clock.systemUTC()) {
             @Override
             public com.ailearn.entity.LearningArticleEntity processLearningArticle(Long learningArticleId) {
                 return null;

@@ -6,6 +6,7 @@ import com.ailearn.entity.LearningArticleEntity;
 import com.ailearn.entity.VocabularyItemEntity;
 import com.ailearn.model.VocabularyCandidate;
 import com.ailearn.repository.ArticleParagraphRepository;
+import com.ailearn.repository.CandidateArticleRepository;
 import com.ailearn.repository.LearningArticleRepository;
 import com.ailearn.repository.VocabularyItemRepository;
 import jakarta.transaction.Transactional;
@@ -39,6 +40,7 @@ public class LearningWorkflowService {
     private final ArticleParagraphRepository articleParagraphRepository;
     private final VocabularyItemRepository vocabularyItemRepository;
     private final EudicClient eudicClient;
+    private final CandidateArticleRepository candidateArticleRepository;
     private final LearningArticleExportService learningArticleExportService;
     private final Clock clock;
 
@@ -51,6 +53,7 @@ public class LearningWorkflowService {
             ArticleParagraphRepository articleParagraphRepository,
             VocabularyItemRepository vocabularyItemRepository,
             EudicClient eudicClient,
+            CandidateArticleRepository candidateArticleRepository,
             LearningArticleExportService learningArticleExportService,
             Clock clock
     ) {
@@ -62,6 +65,7 @@ public class LearningWorkflowService {
         this.articleParagraphRepository = articleParagraphRepository;
         this.vocabularyItemRepository = vocabularyItemRepository;
         this.eudicClient = eudicClient;
+        this.candidateArticleRepository = candidateArticleRepository;
         this.learningArticleExportService = learningArticleExportService;
         this.clock = clock;
     }
@@ -165,6 +169,28 @@ public class LearningWorkflowService {
         }
 
         return savedItem;
+    }
+
+    @Transactional
+    public void deleteLearningArticle(Long learningArticleId) {
+        LearningArticleEntity learningArticle = learningArticleRepository.findById(learningArticleId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Learning article not found"));
+
+        learningArticle.getCandidateArticle().setSelected(false);
+        if (candidateArticleRepository != null) {
+            candidateArticleRepository.save(learningArticle.getCandidateArticle());
+        }
+
+        try {
+            if (learningArticleExportService != null) {
+                learningArticleExportService.deleteExport(learningArticle);
+            }
+        } catch (Exception exception) {
+            log.warn("learning.export.delete_failed learningArticleId={} error={}", learningArticleId, exception.getMessage(), exception);
+        }
+
+        learningArticleRepository.delete(learningArticle);
+        log.info("learning.workflow.deleted learningArticleId={}", learningArticleId);
     }
 
     @Transactional

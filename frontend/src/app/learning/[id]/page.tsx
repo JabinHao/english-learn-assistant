@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { LearningWorkspace } from "@/components/learning/learning-workspace";
+import { DeleteLearningArticleButton } from "@/components/learning/delete-learning-article-button";
 import { ApiError } from "@/lib/api/client";
 import { fetchLearningArticle } from "@/lib/api/learning";
 
@@ -27,6 +28,14 @@ export default async function LearningArticlePage({
   }
 
   return (
-    <LearningWorkspace article={article} />
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <DeleteLearningArticleButton
+          learningArticleId={article.id}
+          redirectTo="/history"
+        />
+      </div>
+      <LearningWorkspace article={article} />
+    </div>
   );
 }
