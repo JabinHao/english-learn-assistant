@@ -1,6 +1,7 @@
 .worktrees/
 .m2/
 target/
+data/
 *.class
 *.jar
 *.log

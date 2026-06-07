@@ -114,7 +114,16 @@ public class ManualLearningArticleService {
             if (uri.getHost() == null || uri.getHost().isBlank()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Article URL must include a host");
             }
-            return uri.toString();
+            URI withoutFragment = new URI(
+                    scheme.toLowerCase(),
+                    uri.getUserInfo(),
+                    uri.getHost(),
+                    uri.getPort(),
+                    uri.getPath(),
+                    uri.getQuery(),
+                    null
+            );
+            return withoutFragment.toString();
         } catch (URISyntaxException exception) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Article URL is invalid", exception);
         }
