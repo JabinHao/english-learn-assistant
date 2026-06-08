@@ -77,13 +77,15 @@ public class LearningWorkflowService {
 
         try {
             log.info("learning.workflow.start learningArticleId={} url={}", learningArticleId, learningArticle.getUrl());
-            String articleContent = articleContentService.fetchArticleContent(learningArticle.getUrl());
+            ArticleContentService.FetchedArticle fetchedArticle = articleContentService.fetchArticle(learningArticle.getUrl());
+            String articleContent = fetchedArticle.content();
             learningArticle.setArticleContent(articleContent);
             learningArticle.setStatus(STATUS_CONTENT_READY);
             learningArticleRepository.save(learningArticle);
 
             List<String> paragraphs = paragraphSplitService.split(articleContent);
             List<String> translations = translationService.translate(paragraphs);
+            enrichManualArticleMetadata(learningArticle, fetchedArticle, paragraphs, translations);
             log.info("learning.workflow.translated learningArticleId={} paragraphCount={}", learningArticleId, paragraphs.size());
 
             articleParagraphRepository.deleteByLearningArticleId(learningArticleId);
@@ -124,6 +126,68 @@ public class LearningWorkflowService {
             log.error("learning.workflow.failed learningArticleId={} error={}", learningArticleId, exception.getMessage(), exception);
             throw exception;
         }
+    }
+
+    private void enrichManualArticleMetadata(
+            LearningArticleEntity learningArticle,
+            ArticleContentService.FetchedArticle fetchedArticle,
+            List<String> paragraphs,
+            List<String> translations
+    ) {
+        if (!"Manual".equals(learningArticle.getSource())) {
+            return;
+        }
+
+        String title = firstNonBlank(fetchedArticle.title(), learningArticle.getTitle());
+        String summary = paragraphs.isEmpty() ? learningArticle.getSummary() : paragraphs.getFirst();
+        if (title != null) {
+            title = truncate(title, 500);
+            learningArticle.setTitle(title);
+            learningArticle.getCandidateArticle().setTitle(title);
+        }
+        if (summary != null && !summary.isBlank()) {
+            learningArticle.setSummary(summary);
+            learningArticle.getCandidateArticle().setSummary(summary);
+        }
+
+        if (isBlank(learningArticle.getCandidateArticle().getChineseTitle()) && title != null && !title.isBlank()) {
+            try {
+                List<String> titleTranslations = translationService.translate(List.of(title));
+                if (!titleTranslations.isEmpty()) {
+                    learningArticle.getCandidateArticle().setChineseTitle(truncate(titleTranslations.getFirst(), 500));
+                }
+            } catch (RuntimeException exception) {
+                log.warn(
+                        "learning.workflow.manual_metadata_title_translation_failed learningArticleId={} error={}",
+                        learningArticle.getId(),
+                        exception.getMessage(),
+                        exception
+                );
+            }
+        }
+        if (isBlank(learningArticle.getCandidateArticle().getChineseSummary()) && !translations.isEmpty()) {
+            learningArticle.getCandidateArticle().setChineseSummary(translations.getFirst());
+        }
+
+        if (candidateArticleRepository != null) {
+            candidateArticleRepository.save(learningArticle.getCandidateArticle());
+        }
+        learningArticleRepository.save(learningArticle);
+    }
+
+    private String firstNonBlank(String first, String fallback) {
+        return isBlank(first) ? fallback : first.strip();
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private String truncate(String value, int maxLength) {
+        if (value == null || value.length() <= maxLength) {
+            return value;
+        }
+        return value.substring(0, maxLength);
     }
 
     @Transactional

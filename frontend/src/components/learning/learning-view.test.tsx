@@ -13,11 +13,13 @@ describe("learning view", () => {
           candidateArticleId: 1,
           status: "EUDIC_PUSHED",
           title: "OpenAI reasoning update",
+          chineseTitle: null,
           url: "https://example.com/a",
           source: "OpenAI",
           publishedAt: "2026-04-26T09:00:00",
           articleContent: "Paragraph one.",
           summary: "A strong candidate for study.",
+          chineseSummary: null,
           paragraphs: [],
           vocabularyItems: [],
         }}

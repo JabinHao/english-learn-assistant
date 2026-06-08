@@ -49,6 +49,9 @@ class LearningHistoryControllerTest {
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].id").value(12))
                 .andExpect(jsonPath("$[0].title").value("Newest article"))
+                .andExpect(jsonPath("$[0].chineseTitle").value("最新文章"))
+                .andExpect(jsonPath("$[0].summary").value("Newest summary"))
+                .andExpect(jsonPath("$[0].chineseSummary").value("最新摘要"))
                 .andExpect(jsonPath("$[0].source").value("OpenAI"))
                 .andExpect(jsonPath("$[0].publishedAt").value("2026-04-28T09:00:00"))
                 .andExpect(jsonPath("$[0].selectedAt").value("2026-04-28T20:00:00"))
@@ -87,6 +90,8 @@ class LearningHistoryControllerTest {
     ) {
         CandidateArticleEntity candidateArticle = new CandidateArticleEntity();
         ReflectionTestUtils.setField(candidateArticle, "id", id + 100);
+        candidateArticle.setChineseTitle(title.equals("Newest article") ? "最新文章" : null);
+        candidateArticle.setChineseSummary(title.equals("Newest article") ? "最新摘要" : null);
 
         LearningArticleEntity article = new LearningArticleEntity();
         ReflectionTestUtils.setField(article, "id", id);
@@ -94,6 +99,7 @@ class LearningHistoryControllerTest {
         article.setTitle(title);
         article.setUrl("https://example.com/" + id);
         article.setSource(source);
+        article.setSummary(title.equals("Newest article") ? "Newest summary" : null);
         article.setStatus(status);
         article.setPublishedAt(LocalDateTime.parse(publishedAt));
         article.setSelectedAt(LocalDateTime.parse(selectedAt));

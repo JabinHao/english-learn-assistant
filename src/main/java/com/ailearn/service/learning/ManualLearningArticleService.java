@@ -57,7 +57,21 @@ public class ManualLearningArticleService {
     private SelectCandidateResponse createAndProcess(String url) {
         CandidateBatchEntity batch = candidateBatchRepository.findByRunDate(MANUAL_BATCH_DATE)
                 .orElseGet(this::createManualBatch);
-        batch.setCandidateCount(batch.getCandidateCount() + 1);
+
+        CandidateArticleEntity savedCandidate = candidateArticleRepository
+                .findFirstByBatchRunDateAndUrlOrderByCreatedAtAsc(MANUAL_BATCH_DATE, url)
+                .orElseGet(() -> createManualCandidate(batch, url));
+        savedCandidate.setSelected(true);
+
+        LearningArticleEntity savedLearningArticle = createLearningArticle(savedCandidate);
+
+        LearningArticleEntity processed = learningWorkflowService.processLearningArticle(savedLearningArticle.getId());
+        return toResponse(processed);
+    }
+
+    private CandidateArticleEntity createManualCandidate(CandidateBatchEntity batch, String url) {
+        int nextRank = batch.getCandidateCount() + 1;
+        batch.setCandidateCount(nextRank);
         candidateBatchRepository.save(batch);
 
         CandidateArticleEntity candidate = new CandidateArticleEntity();
@@ -68,10 +82,12 @@ public class ManualLearningArticleService {
         candidate.setPublishedAt(LocalDateTime.now(clock));
         candidate.setSummary(MANUAL_SUMMARY);
         candidate.setLlmReason("Submitted manually by URL.");
-        candidate.setRankOrder(batch.getCandidateCount());
+        candidate.setRankOrder(nextRank);
         candidate.setSelected(true);
-        CandidateArticleEntity savedCandidate = candidateArticleRepository.save(candidate);
+        return candidateArticleRepository.save(candidate);
+    }
 
+    private LearningArticleEntity createLearningArticle(CandidateArticleEntity savedCandidate) {
         LearningArticleEntity learningArticle = new LearningArticleEntity();
         learningArticle.setCandidateArticle(savedCandidate);
         learningArticle.setStatus(CandidateSelectionService.STATUS_SELECTED);
@@ -81,10 +97,7 @@ public class ManualLearningArticleService {
         learningArticle.setPublishedAt(savedCandidate.getPublishedAt());
         learningArticle.setSummary(savedCandidate.getSummary());
         learningArticle.setSelectedAt(LocalDateTime.now(clock));
-        LearningArticleEntity savedLearningArticle = learningArticleRepository.save(learningArticle);
-
-        LearningArticleEntity processed = learningWorkflowService.processLearningArticle(savedLearningArticle.getId());
-        return toResponse(processed);
+        return learningArticleRepository.save(learningArticle);
     }
 
     private CandidateBatchEntity createManualBatch() {

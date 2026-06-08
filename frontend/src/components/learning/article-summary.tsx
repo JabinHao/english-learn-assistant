@@ -13,6 +13,13 @@ const statusTone: Record<LearningArticle["status"], string> = {
 };
 
 export function ArticleSummary({ article }: { article: LearningArticle }) {
+  const displayTitle = article.chineseTitle?.trim() || article.title;
+  const showEnglishTitle = displayTitle !== article.title;
+  const displaySummary =
+    article.chineseSummary?.trim() ||
+    article.summary ||
+    "This article is selected for study. Translation and vocabulary notes appear below once processing completes.";
+
   return (
     <Card className="overflow-hidden border border-foreground/10 bg-[linear-gradient(135deg,rgba(252,248,240,0.92),rgba(240,246,255,0.92))]">
       <CardHeader className="gap-3">
@@ -26,12 +33,17 @@ export function ArticleSummary({ article }: { article: LearningArticle }) {
           </span>
         </div>
         <CardTitle className="max-w-4xl text-2xl leading-tight md:text-3xl">
-          {article.title}
+          {displayTitle}
         </CardTitle>
+        {showEnglishTitle ? (
+          <p className="max-w-4xl text-sm text-muted-foreground">
+            {article.title}
+          </p>
+        ) : null}
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
         <p className="max-w-3xl text-muted-foreground">
-          {article.summary || "This article is selected for study. Translation and vocabulary notes appear below once processing completes."}
+          {displaySummary}
         </p>
         {article.articleContent ? (
           <div className="rounded-2xl border border-foreground/10 bg-white/70 p-4">

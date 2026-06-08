@@ -86,6 +86,10 @@ class LearningArticleControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(88))
                 .andExpect(jsonPath("$.candidateArticleId").value(7))
+                .andExpect(jsonPath("$.title").value("Selected article"))
+                .andExpect(jsonPath("$.chineseTitle").value("精选文章"))
+                .andExpect(jsonPath("$.summary").value("Summary"))
+                .andExpect(jsonPath("$.chineseSummary").value("中文摘要"))
                 .andExpect(jsonPath("$.paragraphs.length()").value(1))
                 .andExpect(jsonPath("$.paragraphs[0].chineseText").value("中文段落"))
                 .andExpect(jsonPath("$.vocabularyItems[0].id").value(5))
@@ -228,6 +232,8 @@ class LearningArticleControllerTest {
     private LearningArticleEntity learningArticle() {
         CandidateArticleEntity candidateArticle = new CandidateArticleEntity();
         ReflectionTestUtils.setField(candidateArticle, "id", 7L);
+        candidateArticle.setChineseTitle("精选文章");
+        candidateArticle.setChineseSummary("中文摘要");
 
         LearningArticleEntity article = new LearningArticleEntity();
         ReflectionTestUtils.setField(article, "id", 88L);

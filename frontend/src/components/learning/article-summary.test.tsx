@@ -8,11 +8,13 @@ const article: LearningArticle = {
   candidateArticleId: 1,
   status: "TRANSLATED",
   title: "Test Article Title",
+  chineseTitle: "测试文章标题",
   url: "https://example.com/article",
   source: "BBC",
   publishedAt: "2026-04-22T00:00:00Z",
+  articleContent: "English paragraph",
   summary: "This is the article summary.",
-  selectedAt: "2026-04-22T08:00:00Z",
+  chineseSummary: "这是一段中文摘要。",
   paragraphs: [],
   vocabularyItems: [],
 };
@@ -21,10 +23,11 @@ describe("ArticleSummary", () => {
   it("renders title, source, and summary", () => {
     render(<ArticleSummary article={article} />);
 
+    expect(screen.getByText("测试文章标题")).toBeInTheDocument();
     expect(screen.getByText("Test Article Title")).toBeInTheDocument();
     expect(screen.getByText("BBC")).toBeInTheDocument();
     expect(
-      screen.getByText("This is the article summary."),
+      screen.getByText("这是一段中文摘要。"),
     ).toBeInTheDocument();
   });
 

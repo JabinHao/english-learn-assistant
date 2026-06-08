@@ -30,16 +30,16 @@ public class ArticleContentService {
         this.httpClient = httpClient;
     }
 
-    public String fetchArticleContent(String url) {
+    public FetchedArticle fetchArticle(String url) {
         try {
             HttpResponse<String> response = fetch(url);
             if (isSuccessful(response)) {
-                return extractContent(response.body());
+                return extractArticle(response.body());
             }
 
             HttpResponse<String> readerResponse = fetch(READER_BASE_URL + url);
             if (isSuccessful(readerResponse)) {
-                return extractContent(readerResponse.body());
+                return extractArticle(readerResponse.body());
             }
 
             throw new IllegalStateException("Failed to fetch article content: HTTP " + response.statusCode());
@@ -49,6 +49,10 @@ public class ArticleContentService {
             }
             throw new IllegalStateException("Failed to fetch article content", exception);
         }
+    }
+
+    public String fetchArticleContent(String url) {
+        return fetchArticle(url).content();
     }
 
     private HttpResponse<String> fetch(String url) throws IOException, InterruptedException {
@@ -65,16 +69,71 @@ public class ArticleContentService {
         return response.statusCode() >= 200 && response.statusCode() < 300;
     }
 
-    private String extractContent(String body) {
+    private FetchedArticle extractArticle(String body) {
         String trimmed = body == null ? "" : body.strip();
         if (trimmed.startsWith("<")) {
-            return extractArticleContent(trimmed);
+            return extractHtmlArticle(trimmed);
         }
-        return extractPlainTextContent(trimmed);
+        return extractPlainTextArticle(trimmed);
+    }
+
+    private FetchedArticle extractHtmlArticle(String html) {
+        Document document = Jsoup.parse(html);
+        String title = firstNonBlank(
+                document.title(),
+                textOf(document.selectFirst("article h1, main h1, h1"))
+        );
+        return new FetchedArticle(title, extractArticleContent(document));
+    }
+
+    private FetchedArticle extractPlainTextArticle(String text) {
+        String title = null;
+        List<String> paragraphs = new ArrayList<>();
+        for (String block : text.split("\\R\\s*\\R")) {
+            String normalized = block.trim().replaceAll("\\s+", " ");
+            if (normalized.startsWith("Title:")) {
+                title = normalized.substring("Title:".length()).trim();
+                continue;
+            }
+            if (normalized.length() < 40 || normalized.startsWith("URL Source:")) {
+                continue;
+            }
+            paragraphs.add(normalized);
+        }
+
+        if (paragraphs.isEmpty()) {
+            String normalized = text.trim().replaceAll("\\s+", " ");
+            if (!normalized.isBlank()) {
+                paragraphs.add(normalized);
+            }
+        }
+
+        return new FetchedArticle(title, String.join("\n\n", paragraphs));
+    }
+
+    private String textOf(Element element) {
+        return element == null ? null : element.text().trim();
+    }
+
+    private String firstNonBlank(String first, String second) {
+        if (first != null && !first.isBlank()) {
+            return first.trim();
+        }
+        return second == null || second.isBlank() ? null : second.trim();
+    }
+
+    public record FetchedArticle(String title, String content) {
+    }
+
+    public String extractContent(String body) {
+        return extractArticle(body).content();
     }
 
     public String extractArticleContent(String html) {
-        Document document = Jsoup.parse(html);
+        return extractArticleContent(Jsoup.parse(html));
+    }
+
+    private String extractArticleContent(Document document) {
         Element root = findRoot(document);
         List<String> paragraphs = new ArrayList<>();
         for (Element paragraph : root.select("p")) {
@@ -88,29 +147,6 @@ public class ArticleContentService {
             String bodyText = root.text().trim().replaceAll("\\s+", " ");
             if (!bodyText.isBlank()) {
                 paragraphs.add(bodyText);
-            }
-        }
-
-        return String.join("\n\n", paragraphs);
-    }
-
-    private String extractPlainTextContent(String text) {
-        List<String> paragraphs = new ArrayList<>();
-        for (String block : text.split("\\R\\s*\\R")) {
-            String normalized = block.trim().replaceAll("\\s+", " ");
-            if (normalized.length() < 40) {
-                continue;
-            }
-            if (normalized.startsWith("Title:") || normalized.startsWith("URL Source:")) {
-                continue;
-            }
-            paragraphs.add(normalized);
-        }
-
-        if (paragraphs.isEmpty()) {
-            String normalized = text.trim().replaceAll("\\s+", " ");
-            if (!normalized.isBlank()) {
-                paragraphs.add(normalized);
             }
         }
 

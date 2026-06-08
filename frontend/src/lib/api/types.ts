@@ -47,11 +47,13 @@ export interface LearningArticle {
   candidateArticleId: number;
   status: LearningArticleStatus;
   title: string;
+  chineseTitle: string | null;
   url: string;
   source: string;
   publishedAt: string;
   articleContent: string | null;
   summary: string;
+  chineseSummary: string | null;
   paragraphs: ArticleParagraph[];
   vocabularyItems: VocabularyItem[];
 }
@@ -60,10 +62,13 @@ export interface LearningArticle {
 export interface LearningHistoryItem {
   id: number;
   title: string;
+  chineseTitle: string | null;
   source: string;
   publishedAt: string;
   selectedAt: string;
   status: LearningArticleStatus;
+  summary: string | null;
+  chineseSummary: string | null;
 }
 
 // Selection response

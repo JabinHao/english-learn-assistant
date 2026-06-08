@@ -30,10 +30,13 @@ public class LearningHistoryController {
         return new LearningHistoryItemResponse(
                 article.getId(),
                 article.getTitle(),
+                article.getCandidateArticle().getChineseTitle(),
                 article.getSource(),
                 article.getPublishedAt(),
                 article.getSelectedAt(),
-                article.getStatus()
+                article.getStatus(),
+                article.getSummary(),
+                article.getCandidateArticle().getChineseSummary()
         );
     }
 }

@@ -8,11 +8,13 @@ public record LearningArticleResponse(
         Long candidateArticleId,
         String status,
         String title,
+        String chineseTitle,
         String url,
         String source,
         LocalDateTime publishedAt,
         String articleContent,
         String summary,
+        String chineseSummary,
         List<ParagraphResponse> paragraphs,
         List<VocabularyItemResponse> vocabularyItems
 ) {

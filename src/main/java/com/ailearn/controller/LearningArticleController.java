@@ -67,11 +67,13 @@ public class LearningArticleController {
                 learningArticle.getCandidateArticle().getId(),
                 learningArticle.getStatus(),
                 learningArticle.getTitle(),
+                learningArticle.getCandidateArticle().getChineseTitle(),
                 learningArticle.getUrl(),
                 learningArticle.getSource(),
                 learningArticle.getPublishedAt(),
                 learningArticle.getArticleContent(),
                 learningArticle.getSummary(),
+                learningArticle.getCandidateArticle().getChineseSummary(),
                 paragraphs.stream()
                         .map(paragraph -> new LearningArticleResponse.ParagraphResponse(
                                 paragraph.getParagraphIndex(),

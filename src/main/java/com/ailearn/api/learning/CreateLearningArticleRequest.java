@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Size;
 
 public record CreateLearningArticleRequest(
         @NotBlank
-        @Size(max = 1000)
+        @Size(max = 10000)
         String url
 ) {
 }

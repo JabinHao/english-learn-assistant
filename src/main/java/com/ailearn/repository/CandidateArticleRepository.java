@@ -6,12 +6,15 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface CandidateArticleRepository extends JpaRepository<CandidateArticleEntity, Long> {
 
     List<CandidateArticleEntity> findByBatchRunDateOrderByRankOrderAscCreatedAtAsc(java.time.LocalDate runDate);
 
     List<CandidateArticleEntity> findByBatchIdOrderByRankOrderAscCreatedAtAsc(Long batchId);
+
+    Optional<CandidateArticleEntity> findFirstByBatchRunDateAndUrlOrderByCreatedAtAsc(java.time.LocalDate runDate, String url);
 
     @Modifying
     @Query("""

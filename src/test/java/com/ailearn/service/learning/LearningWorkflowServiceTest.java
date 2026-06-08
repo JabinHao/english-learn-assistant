@@ -43,8 +43,8 @@ class LearningWorkflowServiceTest {
                 learningArticleRepository(article, savedArticle),
                 new ArticleContentService() {
                     @Override
-                    public String fetchArticleContent(String url) {
-                        return "Paragraph one.\n\nParagraph two.";
+                    public FetchedArticle fetchArticle(String url) {
+                        return new FetchedArticle(null, "Paragraph one.\n\nParagraph two.");
                     }
                 },
                 new ParagraphSplitService(),
@@ -100,8 +100,8 @@ class LearningWorkflowServiceTest {
                 learningArticleRepository(article, new AtomicReference<>()),
                 new ArticleContentService() {
                     @Override
-                    public String fetchArticleContent(String url) {
-                        return "Paragraph one.";
+                    public FetchedArticle fetchArticle(String url) {
+                        return new FetchedArticle(null, "Paragraph one.");
                     }
                 },
                 new ParagraphSplitService(),
@@ -137,6 +137,58 @@ class LearningWorkflowServiceTest {
         LearningArticleEntity result = service.processLearningArticle(88L);
 
         assertThat(result.getStatus()).isEqualTo("VOCAB_READY");
+    }
+
+    @Test
+    void processLearningArticle_shouldPopulateManualArticleChineseMetadataFromFetchedArticle() {
+        Clock clock = Clock.fixed(Instant.parse("2026-04-26T01:00:00Z"), ZoneOffset.UTC);
+        LearningArticleEntity article = learningArticle(88L, 7L);
+        article.setSource("Manual");
+        article.getCandidateArticle().setSource("Manual");
+        AtomicReference<CandidateArticleEntity> savedCandidate = new AtomicReference<>();
+        AtomicReference<LearningArticleEntity> savedArticle = new AtomicReference<>();
+
+        LearningWorkflowService service = new LearningWorkflowService(
+                learningArticleRepository(article, savedArticle),
+                new ArticleContentService() {
+                    @Override
+                    public FetchedArticle fetchArticle(String url) {
+                        return new FetchedArticle(
+                                "Spring Isn’t Dead",
+                                "For the last three years, Java teams were told to use Python for LLMs.\n\nThat take aged badly."
+                        );
+                    }
+                },
+                new ParagraphSplitService(),
+                new TranslationService(null, prompt -> "", "") {
+                    @Override
+                    public List<String> translate(List<String> paragraphs) {
+                        if (paragraphs.equals(List.of("Spring Isn’t Dead"))) {
+                            return List.of("Spring 并未过时");
+                        }
+                        return List.of("过去三年来，Java 团队一直被建议用 Python 做 LLM。", "这种说法已经站不住脚。");
+                    }
+                },
+                new VocabularyExtractionService(null, prompt -> "", "") {
+                    @Override
+                    public List<VocabularyCandidate> extract(List<String> paragraphs) {
+                        return List.of();
+                    }
+                },
+                paragraphRepository(new AtomicReference<>(List.of())),
+                vocabularyRepository(new AtomicReference<>(List.of())),
+                new EudicClient(null),
+                candidateArticleRepository(savedCandidate),
+                null,
+                clock
+        );
+
+        LearningArticleEntity result = service.processLearningArticle(88L);
+
+        assertThat(result.getTitle()).isEqualTo("Spring Isn’t Dead");
+        assertThat(result.getSummary()).isEqualTo("For the last three years, Java teams were told to use Python for LLMs.");
+        assertThat(savedCandidate.get().getChineseTitle()).isEqualTo("Spring 并未过时");
+        assertThat(savedCandidate.get().getChineseSummary()).isEqualTo("过去三年来，Java 团队一直被建议用 Python 做 LLM。");
     }
 
     @Test

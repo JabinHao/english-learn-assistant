@@ -78,6 +78,29 @@ class ArticleContentServiceTest {
         assertThat(content).doesNotContain("Cloudflare challenge");
     }
 
+    @Test
+    void fetchArticle_shouldReturnReaderTitleAndContent() {
+        RecordingHttpClient httpClient = new RecordingHttpClient(
+                response(403, "<html><body>Cloudflare challenge</body></html>"),
+                response(200, """
+                        Title: Spring Isn’t Dead
+
+                        URL Source: https://medium.com/@niketl16/spring-isnt-dead
+
+                        For the last three years, Java teams were told to use Python for LLMs.
+
+                        That take aged badly.
+                        """)
+        );
+        ArticleContentService service = new ArticleContentService(httpClient);
+
+        ArticleContentService.FetchedArticle article = service.fetchArticle("https://medium.com/@niketl16/spring-isnt-dead");
+
+        assertThat(article.title()).isEqualTo("Spring Isn’t Dead");
+        assertThat(article.content()).contains("For the last three years, Java teams were told to use Python for LLMs.");
+        assertThat(article.content()).doesNotContain("Title:");
+    }
+
     private static HttpResponse<String> response(int statusCode, String body) {
         return new HttpResponse<>() {
             @Override
