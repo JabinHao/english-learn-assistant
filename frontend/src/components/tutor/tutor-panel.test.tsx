@@ -111,6 +111,41 @@ describe("TutorPanel", () => {
     expect(screen.getByText("latency").tagName).toBe("CODE");
   });
 
+  it("renders assistant markdown tables", async () => {
+    listChatSessions.mockResolvedValue([
+      {
+        id: 12,
+        learningArticleId: 88,
+        title: "Table chat",
+        createdAt: "2026-05-16T10:00:00",
+        messageCount: 1,
+        lastMessageAt: "2026-05-16T10:01:00",
+      },
+    ]);
+    loadChatSession.mockResolvedValue({
+      sessionId: 12,
+      learningArticleId: 88,
+      reply: "",
+      messages: [
+        {
+          id: 1,
+          role: "assistant",
+          content:
+            "| Term | Meaning |\n| --- | --- |\n| latency | response delay |\n| cost | token spend |",
+          createdAt: "2026-05-16T10:00:01",
+        },
+      ],
+    });
+
+    render(<TutorPanel learningArticleId={88} />);
+
+    expect(await screen.findByRole("table")).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Term" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Meaning" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "latency" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "response delay" })).toBeInTheDocument();
+  });
+
   it("sends free-form questions to the active session", async () => {
     listChatSessions.mockResolvedValue([
       {

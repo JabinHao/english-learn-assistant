@@ -22,7 +22,6 @@ const VOCABULARY_WIDE_WIDTH_REM = 22;
 const TUTOR_DEFAULT_WIDTH_REM = 16;
 const TUTOR_WIDE_WIDTH_REM = 28;
 const MIN_SIDEBAR_WIDTH_REM = 12;
-const MAX_SIDEBAR_WIDTH_REM = 34;
 
 type ResizingSidebar = "vocabulary" | "tutor";
 
@@ -213,7 +212,6 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
                   aria-label="Resize vocabulary sidebar"
                   aria-orientation="vertical"
                   aria-valuemin={MIN_SIDEBAR_WIDTH_REM}
-                  aria-valuemax={MAX_SIDEBAR_WIDTH_REM}
                   aria-valuenow={vocabularyWidth}
                   className="absolute -right-3 top-12 hidden h-28 w-4 cursor-col-resize items-center justify-center rounded-full text-muted-foreground hover:bg-muted md:flex"
                   onPointerDown={(event) => {
@@ -297,7 +295,6 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
                   aria-label="Resize tutor sidebar"
                   aria-orientation="vertical"
                   aria-valuemin={MIN_SIDEBAR_WIDTH_REM}
-                  aria-valuemax={MAX_SIDEBAR_WIDTH_REM}
                   aria-valuenow={tutorWidth}
                   className="absolute -left-3 top-12 hidden h-28 w-4 cursor-col-resize items-center justify-center rounded-full text-muted-foreground hover:bg-muted md:flex"
                   onPointerDown={(event) => {
@@ -343,7 +340,5 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
 }
 
 function clampSidebarWidth(width: number) {
-  return Math.round(
-    Math.min(MAX_SIDEBAR_WIDTH_REM, Math.max(MIN_SIDEBAR_WIDTH_REM, width)),
-  );
+  return Math.round(Math.max(MIN_SIDEBAR_WIDTH_REM, width));
 }

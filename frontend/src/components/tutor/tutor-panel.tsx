@@ -58,7 +58,8 @@ type MarkdownBlock =
   | { type: "heading"; level: number; text: string }
   | { type: "list"; ordered: boolean; items: string[] }
   | { type: "code"; text: string; language: string | null }
-  | { type: "quote"; text: string };
+  | { type: "quote"; text: string }
+  | { type: "table"; headers: string[]; rows: string[][] };
 
 function isListLine(line: string) {
   return /^\s*(?:[-*]|\d+[.)])\s+/.test(line);
@@ -70,8 +71,23 @@ function isBlockStart(line: string) {
     /^```/.test(line) ||
     /^#{1,4}\s+/.test(line) ||
     isListLine(line) ||
-    /^>\s?/.test(line)
+    /^>\s?/.test(line) ||
+    isTableRow(line)
   );
+}
+
+function isTableRow(line: string) {
+  const trimmed = line.trim();
+  return trimmed.includes("|") && !isTableDivider(trimmed);
+}
+
+function isTableDivider(line: string) {
+  return /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/.test(line.trim());
+}
+
+function parseTableRow(line: string) {
+  const trimmed = line.trim().replace(/^\|/, "").replace(/\|$/, "");
+  return trimmed.split("|").map((cell) => cell.trim());
 }
 
 function parseMarkdownBlocks(content: string): MarkdownBlock[] {
@@ -115,6 +131,23 @@ function parseMarkdownBlocks(content: string): MarkdownBlock[] {
         text: headingMatch[2],
       });
       index += 1;
+      continue;
+    }
+
+    if (
+      index + 1 < lines.length &&
+      isTableRow(line) &&
+      isTableDivider(lines[index + 1])
+    ) {
+      const headers = parseTableRow(line);
+      const rows: string[][] = [];
+      index += 2;
+      while (index < lines.length && isTableRow(lines[index])) {
+        const row = parseTableRow(lines[index]);
+        rows.push(headers.map((_, cellIndex) => row[cellIndex] ?? ""));
+        index += 1;
+      }
+      blocks.push({ type: "table", headers, rows });
       continue;
     }
 
@@ -264,6 +297,41 @@ function MarkdownMessage({ content }: { content: string }) {
             >
               <code className="font-mono">{block.text}</code>
             </pre>
+          );
+        }
+
+        if (block.type === "table") {
+          return (
+            <div key={index} className="overflow-x-auto">
+              <table className="w-full border-collapse text-left text-xs">
+                <thead>
+                  <tr>
+                    {block.headers.map((header, headerIndex) => (
+                      <th
+                        key={headerIndex}
+                        className="border border-foreground/10 bg-background/70 px-2 py-1.5 font-semibold"
+                      >
+                        {renderInline(header)}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {block.rows.map((row, rowIndex) => (
+                    <tr key={rowIndex}>
+                      {block.headers.map((_, cellIndex) => (
+                        <td
+                          key={cellIndex}
+                          className="border border-foreground/10 px-2 py-1.5 align-top"
+                        >
+                          {renderInline(row[cellIndex] ?? "")}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           );
         }
 
