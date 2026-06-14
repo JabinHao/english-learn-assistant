@@ -1,12 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import type { CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import { BilingualParagraphs } from "./bilingual-paragraphs";
 import { VocabularyList } from "./vocabulary-list";
 import { TutorPanel } from "@/components/tutor/tutor-panel";
 import { ArticleSummary } from "./article-summary";
 import type { LearningArticle, TutorChatRequest } from "@/lib/api/types";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  GripVertical,
+  Maximize2,
+  Minimize2,
+} from "lucide-react";
+
+const REM_IN_PX = 16;
+const COLLAPSED_WIDTH_REM = 4;
+const VOCABULARY_DEFAULT_WIDTH_REM = 14;
+const VOCABULARY_WIDE_WIDTH_REM = 22;
+const TUTOR_DEFAULT_WIDTH_REM = 16;
+const TUTOR_WIDE_WIDTH_REM = 28;
+const MIN_SIDEBAR_WIDTH_REM = 12;
+const MAX_SIDEBAR_WIDTH_REM = 34;
+
+type ResizingSidebar = "vocabulary" | "tutor";
+
+interface ResizeState {
+  sidebar: ResizingSidebar;
+  startX: number;
+  startWidth: number;
+}
 
 export function LearningWorkspace({ article }: { article: LearningArticle }) {
   const [pendingRequest, setPendingRequest] = useState<TutorChatRequest | null>(
@@ -17,6 +41,42 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
   );
   const [vocabularyExpanded, setVocabularyExpanded] = useState(true);
   const [tutorExpanded, setTutorExpanded] = useState(true);
+  const [vocabularyWidth, setVocabularyWidth] = useState(
+    VOCABULARY_DEFAULT_WIDTH_REM,
+  );
+  const [tutorWidth, setTutorWidth] = useState(TUTOR_DEFAULT_WIDTH_REM);
+  const [resizing, setResizing] = useState<ResizeState | null>(null);
+
+  useEffect(() => {
+    if (!resizing) return;
+
+    const handlePointerMove = (event: PointerEvent) => {
+      const deltaRem = (event.clientX - resizing.startX) / REM_IN_PX;
+      const nextWidth =
+        resizing.sidebar === "vocabulary"
+          ? resizing.startWidth + deltaRem
+          : resizing.startWidth - deltaRem;
+      const clampedWidth = clampSidebarWidth(nextWidth);
+      if (resizing.sidebar === "vocabulary") {
+        setVocabularyWidth(clampedWidth);
+      } else {
+        setTutorWidth(clampedWidth);
+      }
+    };
+    const stopResizing = () => setResizing(null);
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", stopResizing);
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", stopResizing);
+    };
+  }, [resizing]);
+
+  const workspaceColumns = `${vocabularyExpanded ? `${vocabularyWidth}rem` : `${COLLAPSED_WIDTH_REM}rem`} minmax(0,1fr) ${tutorExpanded ? `${tutorWidth}rem` : `${COLLAPSED_WIDTH_REM}rem`}`;
+  const workspaceStyle = {
+    "--learning-columns": workspaceColumns,
+  } as CSSProperties;
 
   const readingPanel = (
     <BilingualParagraphs
@@ -95,15 +155,9 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
       </div>
 
       <div
-        className={
-          vocabularyExpanded && tutorExpanded
-            ? "grid gap-4 md:grid-flow-row-dense md:grid-cols-[14rem_minmax(0,1fr)_16rem] lg:gap-6"
-            : vocabularyExpanded
-              ? "grid gap-4 md:grid-flow-row-dense md:grid-cols-[14rem_minmax(0,1fr)_4rem] lg:gap-6"
-              : tutorExpanded
-                ? "grid gap-4 md:grid-flow-row-dense md:grid-cols-[4rem_minmax(0,1fr)_16rem] lg:gap-6"
-                : "grid gap-4 md:grid-flow-row-dense md:grid-cols-[4rem_minmax(0,1fr)_4rem] lg:gap-6"
-        }
+        data-testid="learning-workspace-grid"
+        className="grid grid-cols-1 gap-4 md:grid-flow-row-dense md:grid-cols-[var(--learning-columns)] lg:gap-6"
+        style={workspaceStyle}
       >
         <div
           className={
@@ -129,7 +183,50 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
           {vocabularyExpanded ? (
             <div className="sticky top-20 max-h-[calc(100vh-6.5rem)] overflow-y-auto">
               <div className="relative">
+                <div className="mb-2 hidden items-center justify-end gap-1 md:flex">
+                  <button
+                    type="button"
+                    aria-label={
+                      vocabularyWidth >= VOCABULARY_WIDE_WIDTH_REM
+                        ? "Reset vocabulary width"
+                        : "Expand vocabulary width"
+                    }
+                    className="flex size-7 items-center justify-center rounded-full border bg-background shadow-sm"
+                    onClick={() =>
+                      setVocabularyWidth((width) =>
+                        width >= VOCABULARY_WIDE_WIDTH_REM
+                          ? VOCABULARY_DEFAULT_WIDTH_REM
+                          : VOCABULARY_WIDE_WIDTH_REM,
+                      )
+                    }
+                  >
+                    {vocabularyWidth >= VOCABULARY_WIDE_WIDTH_REM ? (
+                      <Minimize2 className="size-3.5" />
+                    ) : (
+                      <Maximize2 className="size-3.5" />
+                    )}
+                  </button>
+                </div>
                 {vocabularyPanel}
+                <div
+                  role="separator"
+                  aria-label="Resize vocabulary sidebar"
+                  aria-orientation="vertical"
+                  aria-valuemin={MIN_SIDEBAR_WIDTH_REM}
+                  aria-valuemax={MAX_SIDEBAR_WIDTH_REM}
+                  aria-valuenow={vocabularyWidth}
+                  className="absolute -right-3 top-12 hidden h-28 w-4 cursor-col-resize items-center justify-center rounded-full text-muted-foreground hover:bg-muted md:flex"
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    setResizing({
+                      sidebar: "vocabulary",
+                      startX: event.clientX,
+                      startWidth: vocabularyWidth,
+                    });
+                  }}
+                >
+                  <GripVertical className="size-4" />
+                </div>
                 <button
                   type="button"
                   aria-label="Collapse vocabulary"
@@ -170,7 +267,50 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
           {tutorExpanded ? (
             <div className="sticky top-20 max-h-[calc(100vh-6.5rem)] overflow-y-auto">
               <div className="relative">
+                <div className="mb-2 hidden items-center justify-start gap-1 md:flex">
+                  <button
+                    type="button"
+                    aria-label={
+                      tutorWidth >= TUTOR_WIDE_WIDTH_REM
+                        ? "Reset tutor width"
+                        : "Expand tutor width"
+                    }
+                    className="flex size-7 items-center justify-center rounded-full border bg-background shadow-sm"
+                    onClick={() =>
+                      setTutorWidth((width) =>
+                        width >= TUTOR_WIDE_WIDTH_REM
+                          ? TUTOR_DEFAULT_WIDTH_REM
+                          : TUTOR_WIDE_WIDTH_REM,
+                      )
+                    }
+                  >
+                    {tutorWidth >= TUTOR_WIDE_WIDTH_REM ? (
+                      <Minimize2 className="size-3.5" />
+                    ) : (
+                      <Maximize2 className="size-3.5" />
+                    )}
+                  </button>
+                </div>
                 {tutorPanel}
+                <div
+                  role="separator"
+                  aria-label="Resize tutor sidebar"
+                  aria-orientation="vertical"
+                  aria-valuemin={MIN_SIDEBAR_WIDTH_REM}
+                  aria-valuemax={MAX_SIDEBAR_WIDTH_REM}
+                  aria-valuenow={tutorWidth}
+                  className="absolute -left-3 top-12 hidden h-28 w-4 cursor-col-resize items-center justify-center rounded-full text-muted-foreground hover:bg-muted md:flex"
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    setResizing({
+                      sidebar: "tutor",
+                      startX: event.clientX,
+                      startWidth: tutorWidth,
+                    });
+                  }}
+                >
+                  <GripVertical className="size-4" />
+                </div>
                 <button
                   type="button"
                   aria-label="Collapse tutor"
@@ -199,5 +339,11 @@ export function LearningWorkspace({ article }: { article: LearningArticle }) {
         </aside>
       </div>
     </>
+  );
+}
+
+function clampSidebarWidth(width: number) {
+  return Math.round(
+    Math.min(MAX_SIDEBAR_WIDTH_REM, Math.max(MIN_SIDEBAR_WIDTH_REM, width)),
   );
 }

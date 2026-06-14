@@ -156,4 +156,67 @@ describe("LearningWorkspace", () => {
     expect(screen.getByLabelText("Vocabulary sidebar")).toBeInTheDocument();
     expect(screen.getByLabelText("Tutor sidebar")).toBeInTheDocument();
   });
+
+  it("can expand the tutor sidebar width", () => {
+    render(
+      <LearningWorkspace
+        article={{
+          id: 88,
+          candidateArticleId: 1,
+          status: "VOCAB_READY",
+          title: "Article",
+          chineseTitle: null,
+          url: "https://example.com",
+          source: "Example",
+          publishedAt: "2026-05-16T10:00:00",
+          articleContent: "Article body",
+          summary: "Summary",
+          chineseSummary: null,
+          paragraphs: [],
+          vocabularyItems: [],
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand tutor width" }));
+
+    expect(screen.getByTestId("learning-workspace-grid")).toHaveStyle({
+      "--learning-columns": "14rem minmax(0,1fr) 28rem",
+    });
+  });
+
+  it("can resize the tutor sidebar by dragging its handle", () => {
+    render(
+      <LearningWorkspace
+        article={{
+          id: 88,
+          candidateArticleId: 1,
+          status: "VOCAB_READY",
+          title: "Article",
+          chineseTitle: null,
+          url: "https://example.com",
+          source: "Example",
+          publishedAt: "2026-05-16T10:00:00",
+          articleContent: "Article body",
+          summary: "Summary",
+          chineseSummary: null,
+          paragraphs: [],
+          vocabularyItems: [],
+        }}
+      />,
+    );
+
+    fireEvent.pointerDown(
+      screen.getByRole("separator", { name: "Resize tutor sidebar" }),
+      { clientX: 800 },
+    );
+    fireEvent.pointerMove(window, { clientX: 720 });
+    fireEvent.pointerUp(window);
+
+    expect(screen.getByRole("separator", { name: "Resize tutor sidebar" }))
+      .toHaveAttribute("aria-valuenow", "21");
+    expect(screen.getByTestId("learning-workspace-grid")).toHaveStyle({
+      "--learning-columns": "14rem minmax(0,1fr) 21rem",
+    });
+  });
 });

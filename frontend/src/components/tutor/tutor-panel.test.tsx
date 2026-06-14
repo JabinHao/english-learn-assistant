@@ -68,6 +68,49 @@ describe("TutorPanel", () => {
     });
   });
 
+  it("renders assistant markdown while keeping user text plain", async () => {
+    listChatSessions.mockResolvedValue([
+      {
+        id: 12,
+        learningArticleId: 88,
+        title: "Markdown chat",
+        createdAt: "2026-05-16T10:00:00",
+        messageCount: 2,
+        lastMessageAt: "2026-05-16T10:01:00",
+      },
+    ]);
+    loadChatSession.mockResolvedValue({
+      sessionId: 12,
+      learningArticleId: 88,
+      reply: "",
+      messages: [
+        {
+          id: 1,
+          role: "user",
+          content: "**do not render**",
+          createdAt: "2026-05-16T10:00:00",
+        },
+        {
+          id: 2,
+          role: "assistant",
+          content: "**Key point**\n\n- first item\n- second item\n\nUse `latency` carefully.",
+          createdAt: "2026-05-16T10:00:01",
+        },
+      ],
+    });
+
+    render(<TutorPanel learningArticleId={88} />);
+
+    const userText = await screen.findByText("**do not render**");
+    expect(userText.tagName).toBe("DIV");
+
+    const boldText = await screen.findByText("Key point");
+    expect(boldText.tagName).toBe("STRONG");
+    expect(screen.getByRole("list")).toBeInTheDocument();
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    expect(screen.getByText("latency").tagName).toBe("CODE");
+  });
+
   it("sends free-form questions to the active session", async () => {
     listChatSessions.mockResolvedValue([
       {
